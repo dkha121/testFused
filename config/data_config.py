@@ -4,7 +4,7 @@ USER_SEP = "USER: "
 SYSTEM_SEP = "SYSTEM: "
 
 LIST_ACT = "user_action: inform, request, greeting, bye, general; "
-LIST_RULE = "1. Chitchat, 2. General, 3. Database: "
+LIST_RULE = "1. Seek, 2. General, 3. Database: "
 DOMAIN_BUS = "Bus; Slot: day, departure, destination, leaveat. "
 
 INSTRUCTION1 = f"Instruction: In this task given a dialogue as context you must be given the type of belief state " \
@@ -35,5 +35,3 @@ INSTRUCTION13 = 'INSTRUCTION13'
 INSTRUCTION14 = 'INSTRUCTION14'
 INSTRUCTION15 = 'INSTRUCTION15'
 INSTRUCTION16 = 'INSTRUCTION16'
-
-a = f"{INSTRUCTION1}"
