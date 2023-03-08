@@ -1,15 +1,31 @@
 import json
 import random
 import sys
+import pandas as pd
+
 sys.path.append("./")
 
 from datareader.data_reader import DataReader
 from config import data_config
 
 
+def define_domain(service):
+    """
+    This function is to define group domain base on service of the utterance
+    :param service: service of the utterance
+    :return: domain of the utterance
+    """
+    domain = None
+    return domain
+
+
 def define_instruction(child_dialogue):
     """
-    :return:
+    This function is to define the input and label for module state prediction
+    :param child_dialogue: dialogue history for module 1
+    :return: dictionary of input include two keys:
+            - prompt: instruction
+            - output: label
     """
     # Define instruction
     list_instruction = [data_config.INSTRUCTION1, data_config.INSTRUCTION2, data_config.INSTRUCTION3,
@@ -26,15 +42,15 @@ def define_instruction(child_dialogue):
         elif utter['speaker'] == "SYSTEM":
             list_turn.append(data_config.SYSTEM_SEP + utter['utterance'] + data_config.EOT_SEP)
 
-    dict_input['prompt'] = instruction + data_config.CTX_SEP \
-                           + ''.join([turn for turn in list_turn]) \
-                           + data_config.EOD_SEP + data_config.OPT_SEP + data_config.LIST_ACT \
-                           + data_config.LIST_RULE + data_config.LIST_DOMAIN
+    frame = child_dialogue[-1]['frames'][0]
+    service = frame['service']
+    domain = define_domain(service)
+    dict_input['prompt'] = instruction.replace("<DIALOGUE_CONTEXT>",
+                                               ''.join([turn for turn in list_turn])).replace('<DOMAIN>', domain)
 
     # Define label
     list_action = []
     dict_label = dict()
-    frame = child_dialogue[-1]['frames'][0]
     if len(frame['slots']) == 0:
         dict_input['output'] = "Chitchat: None"
     else:

@@ -1,3 +1,4 @@
+path_schema_guided = ""
 EOT_SEP = "[EOT]. "
 USER_SEP = "USER: "
 SYSTEM_SEP = "SYSTEM: "
