@@ -3,7 +3,7 @@ import json
 import random
 import sys
 import pandas as pd
-from data_reader import DataReader
+from datareader.data_reader import DataReader
 
 sys.path.append("./")
 
