@@ -31,7 +31,7 @@ class DataReader(ABC):
         print(f"\nInput sample file is save to {self.sample_path}")
 
     @abstractmethod
-    def load_data(self) -> Union[List[Dict], Dict[str]]:
+    def load_data(self) -> None:
         """
         Read the data file (.json, .csv, ...)
         :return: the list of dictionaries or the dictionary of samples in the dataset
