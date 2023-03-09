@@ -34,4 +34,3 @@ if __name__ == '__main__':
     woi_converter(args.woi_dataset,
                   args.woi_sample)
     print("Complete converting WOI")
-
