@@ -44,12 +44,9 @@ def define_instruction(child_dialogue):
         elif utter['action'] == "Wizard => Apprentice":
             list_turn.append(data_config.SYSTEM_SEP + utter['text'] + data_config.EOT_SEP)
 
-    # frame = child_dialogue[-1]['frames'][0]
-    # service = frame['service']
-    # domain = define_domain(service)
 
     last_system_utter = child_dialogue[-1]
-    domain = data_config.DOMAIN_BUS
+    domain = ''
     dict_input['prompt'] = instruction.replace("<DIALOGUE_CONTEXT>",
                                                ''.join([turn for turn in list_turn[:len(list_turn)-1]])).replace('<DOMAIN>', domain)
 
@@ -146,7 +143,7 @@ class WOIReader(DataReader):
         """
         with open(self.sample_path, 'w', encoding='utf-8') as f:
             for child_dialogue in self.list_utter:
-                if len(child_dialogue) == 0:
+                if len(child_dialogue) <= 2:
                     continue
                 dict_input = define_instruction(child_dialogue)
                 json.dump(dict_input, f)
