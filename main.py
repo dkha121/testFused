@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 from filelock import FileLock
 import nltk
+import json
 
 import transformers
 from transformers import (
@@ -255,10 +256,10 @@ def main():
             )
 
     # Set seed before initializing model.
-    print('SEED', training_args.seed)
+    logger.info('SEED', training_args.seed)
     set_seed(training_args.seed)
 
-    print('\nDownloading pretrained model' + '.' * 10)
+    logger.info('\nDownloading pretrained model' + '.' * 10)
     config = AutoConfig.from_pretrained(
         model_args.config_name if model_args.config_name else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
@@ -269,7 +270,7 @@ def main():
     config.force_bos_token_to_be_generated = True
     config.forced_bos_token_id = 0
 
-    print('\nLoading tokenizer' + '.' * 10)
+    logger.info('\nLoading tokenizer' + '.' * 10)
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
@@ -278,7 +279,7 @@ def main():
         use_auth_token=True if model_args.use_auth_token else None,
     )
 
-    print('\nLoading pretrained' + '.' * 10)
+    logger.info('\nLoading pretrained' + '.' * 10)
     model = AutoModelForSeq2SeqLM.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
@@ -287,19 +288,39 @@ def main():
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
     )
+    # resize token embedding, if add new token, please resize again
     model.resize_token_embeddings(len(tokenizer))
     if model.config.decoder_start_token_id is None:
         model.config.decoder_start_token_id = model.config.bos_token_id
-    print('model.config.decoder_start_token_id', model.config.decoder_start_token_id)
+    logger.info('model.config.decoder_start_token_id', model.config.decoder_start_token_id)
 
-    print('\nPreprocessing data' + '.' * 10)
-    dataloader = DataLoader(data_args.pad_to_max_length,
-                            data_args.max_train_samples,
-                            data_args.max_source_length,
-                            data_args.max_target_length,
-                            data_args.ignore_pad_token_for_loss)
-    train_dataset, eval_dataset, test_dataset, data_collator = dataloader.preprocess_data(data_args, model_args,
-                                                                                          training_args)
+    logger.info('\nPreprocessing data' + '.' * 10)
+    dataloader = DataLoader(training_args=training_args,
+                            train_file=data_args.train_file,
+                            validation_file=data_args.validation_file,
+                            test_file=data_args.test_file,
+                            cache_dir=model_args.cache_dir,
+                            tokenizer=model_args.tokenizer,
+                            model=model,
+                            do_train=training_args.do_train,
+                            do_eval=training_args.do_eval,
+                            do_predict=training_args.do_predict,
+                            pad_to_max_length=data_args.pad_to_max_length,
+                            max_train_samples=data_args.max_train_samples,
+                            max_eval_samples=data_args.max_eval_samples,
+                            max_predict_samples=data_args.max_predict_samples,
+                            max_source_length=data_args.max_source_length,
+                            max_target_length=data_args.max_target_length,
+                            ignore_pad_token_for_loss=data_args.ignore_pad_token_for_loss,
+                            text_column=data_args.text_column,
+                            target_column=data_args.target_column,
+                            preprocessing_num_workers=data_args.preprocessing_num_workers,
+                            overwrite_cache=data_args.overwrite_cache)
+
+    data_collator = dataloader.__call__()
+    train_dataset = dataloader.train_dataset
+    eval_dataset = dataloader.eval_dataset
+    test_dataset = dataloader.test_dataset
 
     # Initialize our Trainer
     trainer = Seq2SeqTrainer(
@@ -311,25 +332,54 @@ def main():
         data_collator=data_collator,
         compute_metrics=compute_metrics if training_args.predict_with_generate else None,
     )
-
-    # training
-    training = Trainer(training_args=training_args,
-                       data_args=data_args,
-                       model_args=model_args,
-                       last_checkpoint=last_checkpoint,
-                       trainer=trainer,
-                       train_dataset=train_dataset)
-    trainer = training.train()
+    if training_args.do_train:
+        logger.info('\nTraining' + '.' * 10)
+        # Write all arguments to .json file
+        output_args_file = os.path.join(training_args.output_dir, f"modelargs.json")
+        os.makedirs(training_args.output_dir, exist_ok=True)
+        with open(output_args_file, "w+") as writer:
+            all_argsdict = {**model_args.__dict__, **data_args.__dict__, **training_args.to_dict()}
+            json.dump(all_argsdict, writer)
+        # train
+        training = Trainer(last_checkpoint=last_checkpoint,
+                           trainer=trainer,
+                           resume_from_checkpoint=training_args.resume_from_checkpoint,
+                           train_dataset=train_dataset,
+                           max_train_samples=data_args.max_train_samples)
+        training.train()
+        trainer = training.trainer
 
     # evaluation
-    evaluation = Evaluation(data_args=data_args,
-                            training_args=training_args,
-                            trainer=trainer,
-                            eval_dataset=eval_dataset,
-                            test_dataset=test_dataset,
-                            tokenizer=tokenizer,
-                            logger=logger)
-    trainer = evaluation.trainer
+    # get num_beams (beam_search)
+    num_beams = data_args.num_beams if data_args.num_beams is not None else training_args.generation_num_beams
+    # get max length of output
+    max_length = (
+        training_args.generation_max_length
+        if training_args.generation_max_length is not None
+        else data_args.val_max_target_length
+    )
+    if training_args.do_eval:
+        logger.info('\nEvaluating' + '.' * 10)
+        evaluation = Evaluation(trainer=trainer,
+                                eval_dataset=eval_dataset,
+                                test_dataset=test_dataset,
+                                tokenizer=tokenizer,
+                                max_length=max_length,
+                                val_max_target_length=data_args.val_max_target_length,
+                                num_beams=num_beams,
+                                max_eval_samples=data_args.max_eval_samples,
+                                max_predict_samples=data_args.max_predict_samples,
+                                predict_with_generate=training_args.predict_with_generate,
+                                output_dir=training_args.output_dir
+                                )
+        evaluation.eval()
+        trainer = evaluation.trainer
+
+        # predict
+        if training_args.do_predict:
+            logger.info('\nPredicting' + '.' * 10)
+            evaluation.predict()
+            trainer = evaluation.trainer
 
     kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "summarization"}
     if data_args.dataset_name is not None:
@@ -341,8 +391,10 @@ def main():
             kwargs["dataloader"] = data_args.dataset_name
 
     if training_args.push_to_hub:
+        # push model to hub
         trainer.push_to_hub(**kwargs)
     else:
+        # create model card
         trainer.create_model_card(**kwargs)
 
 

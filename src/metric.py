@@ -1,6 +1,8 @@
 from datasets import load_metric
 import nltk
 import numpy as np
+import json
+import os
 
 
 # Metric
@@ -24,7 +26,7 @@ def postprocess_text(preds, labels):
     return preds, labels
 
 
-def compute_metrics(data_args, eval_preds, tokenizer, input_ids=None):
+def compute_metrics(eval_preds, tokenizer, ignore_pad_token_for_loss=True, input_ids=None, global_step=0):
     preds, labels = eval_preds
     if isinstance(preds, tuple):
         preds = preds[0]
@@ -33,7 +35,7 @@ def compute_metrics(data_args, eval_preds, tokenizer, input_ids=None):
     input_ids = np.where(input_ids != -100, input_ids, tokenizer.pad_token_id)
     decoded_inputs = tokenizer.batch_decode(input_ids, skip_special_tokens=True)
     decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
-    if data_args.ignore_pad_token_for_loss:
+    if ignore_pad_token_for_loss:
         # Replace -100 in the labels as we can't decode them.
         labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
     decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
@@ -70,5 +72,20 @@ def compute_metrics(data_args, eval_preds, tokenizer, input_ids=None):
         else:
             result = {metric_name: metric}
         results.update(result)
+
+    prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds]
+    results["gen_len"] = np.mean(prediction_lens)
+    results = {k: round(v, 4) for k, v in results.items()}
+
+    # # write result
+    # output_prediction_file = os.path.join(output_dir, f"intermediate_result_{global_step}.jsonl")
+    # with open(output_prediction_file, "a") as writer:
+    #     for inputs, preds, labels in zip(decoded_inputs, decoded_preds, decoded_labels):
+    #         output_str = json.dumps({'input_ids': inputs, 'preds': preds, 'labels': labels})
+    #         writer.write(output_str + '\n')
+    #
+    # output_prediction_file = os.path.join(output_dir, f"intermediate_metrics_{global_step}.json")
+    # with open(output_prediction_file, "a") as writer:
+    #     json.dump(results, writer)
 
     return results

@@ -1,14 +1,10 @@
-
 import json
 import random
 import sys
-import pandas as pd
+sys.path.append("./")
 from datareader.data_reader import DataReader
 
-sys.path.append("./")
-
-
-import data_config
+from config import data_config
 
 
 def define_domain(service):
@@ -44,7 +40,6 @@ def define_instruction(child_dialogue):
         elif utter['action'] == "Wizard => Apprentice":
             list_turn.append(data_config.SYSTEM_SEP + utter['text'] + data_config.EOT_SEP)
 
-
     last_system_utter = child_dialogue[-1]
     domain = ''
     dict_input['prompt'] = instruction.replace("<DIALOGUE_CONTEXT>",
@@ -59,7 +54,6 @@ def define_instruction(child_dialogue):
     else:
         dict_label['Seek'] = last_system_utter['query_key']
         dict_input['output'] = "Seek: " + last_system_utter['query_key'] +'; general'
-
 
     return dict_input
 
