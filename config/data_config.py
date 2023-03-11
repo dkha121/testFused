@@ -1,5 +1,6 @@
 from config import ontology
 
+
 path_schema_guided = ""
 EOT_SEP = "[EOT]. "
 USER_SEP = "USER: "
@@ -42,19 +43,19 @@ INSTRUCTION11 = f'Instruction: Based on the following conversation context [CTX]
                 f' generate a belief state of the speaker using the following options' \
                 f' [OPT] {ontology.LIST_USER_ACT}; {LIST_RULE} <DOMAIN>. [Q] What is the belief state ? '
 INSTRUCTION12 = f'Instruction: By examining the given conversation, you must be able to recognize the belief state that exists  ,' \
-               f'between the two individuals. [CTX]{DIALOGUE_CONTEXT}[EOD]. ' \
+               f'between the two individuals. [CTX]<DIALOGUE_CONTEXT>[EOD]. ' \
                f'[OPT] {ontology.LIST_USER_ACT}; {LIST_RULE} <DOMAIN> [Q] What is the belief state? '
 INSTRUCTION13 = f'Instruction: You will be required to analyze the conversation provided and determine the type of belief state between  ,' \
-               f'the specified individuals or speakers. [CTX]{DIALOGUE_CONTEXT}[EOD]. ' \
+               f'the specified individuals or speakers. [CTX]<DIALOGUE_CONTEXT>[EOD]. ' \
                f'[OPT] {ontology.LIST_USER_ACT}; {LIST_RULE} <DOMAIN> [Q] What is the belief state? '
 INSTRUCTION14 = f'Instruction: The goal of this assignment is to determine the belief state between the specified individuals by analyzing ,' \
-               f'the dialogue provided. [CTX]{DIALOGUE_CONTEXT}[EOD]. ' \
+               f'the dialogue provided. [CTX]<DIALOGUE_CONTEXT>[EOD]. ' \
                f'[OPT] {ontology.LIST_USER_ACT}; {LIST_RULE} <DOMAIN> [Q] What is the belief state? '
 INSTRUCTION15 = f'Instruction: Your objective is to identify the belief state between two people or speakers by analyzing ,' \
-               f'the given dialogue. [CTX]{DIALOGUE_CONTEXT}[EOD]. ' \
+               f'the given dialogue. [CTX]<DIALOGUE_CONTEXT>[EOD]. ' \
                f'[OPT] {ontology.LIST_USER_ACT}; {LIST_RULE} <DOMAIN> [Q] What is the belief state? '
 INSTRUCTION16 = f'Instruction: You need to determine the type of belief state between the specified speakers based on,' \
-               f'this provided dialogue. [CTX]{DIALOGUE_CONTEXT}[EOD]. ' \
+               f'this provided dialogue. [CTX]<DIALOGUE_CONTEXT>[EOD]. ' \
                f'[OPT] {ontology.LIST_USER_ACT}; {LIST_RULE} <DOMAIN> [Q] What is the belief state? '
 
 
