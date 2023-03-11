@@ -29,7 +29,9 @@ def define_instruction(child_dialogue):
     list_instruction = [data_config.INSTRUCTION1, data_config.INSTRUCTION2, data_config.INSTRUCTION3,
                         data_config.INSTRUCTION4, data_config.INSTRUCTION5, data_config.INSTRUCTION6,
                         data_config.INSTRUCTION7, data_config.INSTRUCTION8, data_config.INSTRUCTION9,
-                        data_config.INSTRUCTION10, data_config.INSTRUCTION11]
+                        data_config.INSTRUCTION10, data_config.INSTRUCTION11, data_config.INSTRUCTION12,
+                        data_config.INSTRUCTION13,data_config.INSTRUCTION14, data_config.INSTRUCTION15,
+                        data_config.INSTRUCTION16]
     instruction = random.choice(list_instruction)
     # Define input
     dict_input = dict()
