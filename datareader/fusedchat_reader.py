@@ -15,7 +15,9 @@ def define_domain(service):
     :param service: service of the utterance
     :return: domain of the utterance
     """
-    domain = None
+    domain = []
+    for i in service:
+        domain.append(list(i.split("-"))[0])
     return domain
 
 
@@ -43,28 +45,59 @@ def define_instruction(child_dialogue):
             list_turn.append(data_config.SYSTEM_SEP + utter['text'] + data_config.EOT_SEP)
 
     frame = child_dialogue[-1]['dialog_action']["dialog_act"]
-    domain = list(child_dialogue[-1]['dialog_action']["dialog_act"].keys())[0].split("-")[0]
-    # domain = define_domain(service)
+    service = []
+    for i in frame:
+        service.append(i)
+    domain = define_domain(service)
     dict_input['prompt'] = instruction.replace("<DIALOGUE_CONTEXT>",
                                                ''.join([turn for turn in list_turn])).replace('<DOMAIN>', domain)
 
     # Define label
-    list_action = []
-    dict_label = dict()
-    if 'dialog_act' in  child_dialogue[-1].keys():
-        dict_input['output'] = "General"
+    if 'dialog_act' in child_dialogue[-1].keys():
+        dict_input['output'] = "Chitchat: None"
     else:
-        dict_label['Database'] = frame['service']
-        for action in frame['actions']:
-            dict_action = dict()
-            act = action['act']
-            if len(action['slot']) > 0:
-                dict_action[act] = [(action['slot'] + ' ~ ' + value) for value in action['values']]
-            else:
-                dict_action[act] = ['none']
-            list_action.append(dict_action)
-        dict_input['output'] = "Database: " + frame['service'] + '; ' \
-                               + str(list_action).replace('{', '').replace(']}', ')').replace(': [', ': (')
+
+        domain_actions = []
+        for key, action in child_dialogue[-1].items():
+
+            domain_actions.append(action['dialog_act'])
+
+            for domain_action in domain_actions:
+
+                list_domain = dict()
+                for domain_key, domain_val in domain_action.items():
+
+                    domain1 = domain_key.split("-")[0]
+                    action1 = domain_key.split("-")[1]
+                    a = dict()
+                    a[action1] = domain_val
+                    if domain1 not in list_domain.keys():
+                        list_domain[domain1] = a
+                    else:
+                        list_domain[domain1].__setitem__(action1, domain_val)
+        output = dict()
+        for k, v in list_domain.items():
+            f = ""
+            list_ac = []
+            for ke, va in v.items():
+                list_slot = []
+                for val in va:
+                    d = " ~ ".join(val)
+                    list_slot.append(d)
+
+                c = ke + ": " + "(" + "; ".join(list_slot) + ")"
+                list_ac.append(c)
+            f = "[" + ", ".join(list_ac) + "]"
+            output[k] = f
+        if len(list(output.keys())) == 1:
+            for k, v in output.items():
+                dict_input['output'] = "Database: " + k + "; " + v
+        else:
+            m = []
+            for k, v in output.items():
+                z = '{' + "Database: " + k + "; " + v + '}'
+                m.append(z)
+            dict_input['output'] = " AND ".join(m)
     return dict_input
 
 
