@@ -17,7 +17,7 @@ Buses = "Buses; Slots: origin, destination, from_station, to_station, departure_
 Flight = "Flight; Slots: origin_city, passengers, seating_class, destination_city, origin_airpot, " \
          "destination_airpot, depature_date, return_date, number_stops, outbound_departure_time, " \
          "outbound_arrival_time, inbound_arrival_time, inbound_departure_time, price, refundable, airlines, is_nonstop"
-Train = "Train; Slots: from, destination, departure, day, leaveat, price, bookpeople, class, trip_protection, arrive, id, " \
+Train = "Train; Slots: from, destination, departure, day, leaveat, price, bookpeople, class, trip_protection, arriveby, trainid, " \
         "choice, name, ref, duration"
 Taxi = "Taxi; Slots: arriveby, type, departure, destination, leaveat, phone, choice, bookday, bookpeople"
 Message = "Message; Slots: location, contact_name"
