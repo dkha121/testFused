@@ -53,5 +53,5 @@ if __name__ == '__main__':
     woi_converter(args.woi_dataset,
                   args.woi_sample)
 
-    fusedchat_converter(args.ketod_dataset,
+    fusedchat_converter(args.fusedchat_dataset,
                         args.fusedchat_sample)
