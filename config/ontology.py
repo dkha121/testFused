@@ -17,7 +17,7 @@ Buses = "Buses; Slots: origin, destination, from_station, to_station, departure_
 Flight = "Flight; Slots: origin_city, passengers, seating_class, destination_city, origin_airpot, " \
          "destination_airpot, depature_date, return_date, number_stops, outbound_departure_time, " \
          "outbound_arrival_time, inbound_arrival_time, inbound_departure_time, price, refundable, airlines, is_nonstop"
-Train = "Train; Slots: from, to, depart, day, leave, price, people, class, trip_protection, arrive, id"
+Train = "Train; Slots: from, to, to_station, depart, day, leave, price, people, class, trip_protection, arrive, id"
 Taxi = "Taxi; Slots: arrive, car, depart, dest, leave, phone"
 Message = "Message; Slots: location, contact_name"
 
@@ -31,14 +31,14 @@ Travel = "Travel; Slots: location, attraction_name, category, phone_number, free
 Booking = "Booking: Slot: day, people, stay, time, price, name"
 Weather = "Weather; Slots: precipitation, humidity, wind, temperature, city, date"
 HOSPITAL = "Hospital; Slots: Addr, Phone, Post"
-Services = "Services; Slots: stylist_name, phone_number, average_rating, is_unisex, street_address, city, type, " \
+Services = "Services; Slots: stylist_name, phone_number, average_rating, is_unisex, address, city, type, " \
            "appointment_date, appointment_time, denstist_name, offer_cosmetic_services, doctor_name, therapist_name"
 HOME = "Home; Slots: area, address, property_name, phone_number, furnished, pets_allowed, intent, visit_date," \
        "numer_of_beds, number_of_baths, has-garage, in_unit_laundry, price"
 Media = "Media; Slots: title, genre, subtile, director, actors, price"
 Music = "Music; Slots: song_name, artist, album, genre, year, device"
 Movies = "Movies; Slots: price, number_of_tickets, show_type, theater_name, show_time, show_date, genre, " \
-         "street_address, location, movie_name, aggregate_rating, starring, director"
+         "street_address, location, title, aggregate_rating, starring, director"
 Events = "Events; Slots: category, subcategory, event_name, date, time, number_of_seats, city_of_event, " \
          "event_location, address_of_location, event_type, number_of_tickets, venue, venue_addressm, price_per_ticket"
 Calendar = "Calendar; Slots: event_date, event_time, event_location, event_name, available_start_time, " \
