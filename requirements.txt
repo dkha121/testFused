@@ -1,11 +1,9 @@
 datasets~=2.10.1
-transformers~=4.26.1
-yake~=0.4.8
-numpy~=1.24.2
 torch~=1.13.1
+transformers~=4.26.1
 nltk~=3.8.1
+numpy~=1.24.2
 filelock~=3.9.0
-deepspeed
-git+https://github.com/Maluuba/nlg-eval.git@master
-rouge_score
-bert_score
+tqdm~=4.65.0
+pandas~=1.5.3
+setuptools~=65.6.3

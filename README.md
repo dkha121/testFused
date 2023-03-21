@@ -9,6 +9,13 @@ pip install -r requirements.txt
 ## Convert dataset 
 ```shell
 python datareader/data_converter.py --ketod_dataset <path_of_ketod> --ketod_sample <out_path_of_ketod>
+
+
+python datareader/data_converter.py --woi_dataset <path_of_woi> --woi_sample <out_path_of_woi>
+
+
+python datareader/data_converter.py --fusedchat_dataset <path_of_fused> --fused_sample <out_path_of_fused> --schema_guided <path_of_schema>
+
 ```
 ```commandline
 usage: Dataset Converter [-h] [--ketod_dataset KETOD_DATASET]
@@ -21,6 +28,15 @@ optional arguments:
   --ketod_sample KETOD_SAMPLE
                         the path of ketod sample (out file)
 ```
+
+## Dowload link
+
+
+Wizard of Internet(Raw and processed): https://www.transferxl.com/download/04j2SvjZrY2Ggk <br />
+
+FusedChat https://drive.google.com/drive/folders/103hQEK8PXr0yKlvEt_tkSmo7oTbQBreM (download test_fusedchat.json to test) <br />
+
+
 
 ## Training
 ```shell
