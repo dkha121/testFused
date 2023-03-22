@@ -1,8 +1,8 @@
 # import sys
 # sys.path.append("./")
-from src.features.fusedchat_reader import FUSEDCHATReader
-from src.features.ketod_reader import KETODReader
-from src.features.WoI_reader import WOIReader
+from src.features.datareader.fusedchat_reader import FUSEDCHATReader
+from src.features.datareader.ketod_reader import KETODReader
+from src.features.datareader.WoI_reader import WOIReader
 import argparse
 
 

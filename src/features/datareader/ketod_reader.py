@@ -4,7 +4,7 @@ import json
 import random
 from tqdm import tqdm
 
-from src.features.data_reader import DataReader
+from src.features.datareader.data_reader import DataReader
 from src.config import data_config
 from src.config.ontology import dict_user_action, LIST_CHITCHAT_ACT
 

@@ -4,7 +4,7 @@ import random
 # sys.path.append("./")
 
 from src.config import data_config
-from src.features.data_reader import DataReader
+from src.features.datareader.data_reader import DataReader
 
 
 class FUSEDCHATReader(DataReader):
