@@ -26,14 +26,14 @@ def main(args):
     model = BartForConditionalGeneration.from_pretrained(args.path_to_save_dir)
 
     while True:
-        sentence = input()
+        sentence = input("Prompt: ")
         if sentence == 'exit':
             break
         input_tokens = tokenizer(sentence, return_tensors="pt")
         output = model.generate(input_tokens["input_ids"], attention_mask=input_tokens["attention_mask"])
 
         decoded_output = tokenizer.decode(output[0], skip_special_tokens=True)
-        print(decoded_output)
+        print("Output: ", decoded_output)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
