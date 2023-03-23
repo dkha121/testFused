@@ -112,26 +112,17 @@ class StateDataloader():
         if self.do_train and self.train_dataset is not None:
             if self.max_train_samples is not None:
                 self.train_dataset = self.train_dataset.select(range(self.max_train_samples))
-            if not self.dynamic_batch_collate:
-                self.train_dataset = self.preprocess_data( self.train_dataset,
-                                                          desc="train dataloader map pre-processing")
-            dataloaders['train'] = self.get_dataloader(self.train_dataset, types_train=True,
-                                                       dynamic_batch_collate=self.dynamic_batch_collate)
+            dataloaders['train'] = self.get_dataloader(self.train_dataset, shuffle_flag=True)
 
         if self.do_eval and self.eval_dataset is not None:
             if self.max_eval_samples is not None:
                 self.eval_dataset = self.eval_dataset.select(range(self.max_eval_samples))
-            if not self.dynamic_batch_collate:
-                self.eval_dataset = self.preprocess_data( self.eval_dataset,
-                                                         desc="val dataloader map pre-processing")
-            dataloaders['eval'] = self.get_dataloader(self.eval_dataset,
-                                                      dynamic_batch_collate=self.dynamic_batch_collate)
+            dataloaders['eval'] = self.get_dataloader(self.eval_dataset)
 
         if self.do_predict and self.test_dataset is not None:
             if self.max_predict_samples is not None:
                 self.test_dataset = self.test_dataset.select(range(self.max_predict_samples))
-            self.test_dataset = self.preprocess_data( self.test_dataset,
-                                                     desc="test dataloader map pre-processing")
+            dataloaders['test'] = self.get_dataloader(self.test_dataset)
 
         return dataloaders
 
@@ -166,53 +157,6 @@ class StateDataloader():
         dataset = load_dataset(extension, data_files=data_files, split=key)
         return dataset
 
-    def preprocess_function(self, raw_dataset_examples: DatasetDict) -> DatasetDict:
-        """
-        Preprocesses the raw dataset by extracting inputs and targets, tokenizing them using the tokenizer,
-        and returning a dictionary containing the tokenized inputs and labels.
-        :param raw_dataset_examples (DatasetDict): A dictionary containing the raw dataset.
-
-        :return:
-            DatasetDict: A dictionary containing the tokenized inputs and labels.
-        """
-
-        inputs = []
-        targets = []
-
-        for i in range(len(raw_dataset_examples[self.text_column])):
-            if raw_dataset_examples[self.text_column][i] is not None and raw_dataset_examples[self.target_column][
-                i] is not None:
-                inputs.append(raw_dataset_examples[self.text_column][i])
-                targets.append(raw_dataset_examples[self.target_column][i])  # + tokenizer.eos_token)
-
-        model_inputs = self.tokenizer(inputs, padding=self.padding, truncation=True)
-        labels = self.tokenizer(text_target=targets, padding=self.padding, truncation=True)
-
-        if self.ignore_pad_token_for_loss:
-            labels["input_ids"] = [[(l if l != self.tokenizer.pad_token_id else -100) for l in label] for label in
-                                   labels["input_ids"]]
-
-        model_inputs["labels"] = labels["input_ids"]
-
-        return model_inputs
-
-    def preprocess_data(self, raw_dataset: DatasetDict, desc) -> Dataset:
-        """
-        This function preprocesses the raw dataset of the whole dataset using the tokenizer.
-        :param raw_dataset: Dictionary of raw datasets.
-        :param desc: Description of the dataset being processed.
-        :return: Preprocessed dataset as a Hugging Face Dataset object.
-        """
-        with self.accelerator.main_process_first():
-            dataset = raw_dataset.map(
-                self.preprocess_function,
-                batched=True,
-                num_proc=self.preprocessing_num_workers,
-                remove_columns=raw_dataset.column_names,
-                desc=desc,
-            )
-
-        return dataset
 
     def dynamic_collate(self, batch):
         """
@@ -223,61 +167,41 @@ class StateDataloader():
         targets = [example[self.target_column] for example in batch]
 
         # Get the maximum length in the batch
+
         max_len = max(len(self.tokenizer.encode(input)) + len(self.tokenizer.encode(target)) for input, target in
                       zip(inputs, targets))
         max_len = min(max_len, self.max_len_instruction) if self.max_len_instruction is not None else max_len
 
-        # Tokenize the inputs and targets
-        tokenized_inputs = self.tokenizer(inputs, max_length=max_len, padding="max_length", truncation=True)
-        tokenized_targets = self.tokenizer(targets, max_length=max_len, padding="max_length", truncation=True)
+        inp_tokens = self.tokenizer.batch_encode_plus(
+            inputs,
+            max_length=max_len if max_len > 0 else None, return_tensors="pt",
+            pad_to_max_length=True,
+            truncation=True if max_len > 0 else False,
+        )
+        tgt_tokens = self.tokenizer.batch_encode_plus(
+            targets,
+            max_length=max_len if max_len > 0 else None, pad_to_max_length=True,
+            return_tensors="pt",
+            truncation=True if max_len > 0 else False,
+        )
+        target_ids = tgt_tokens["input_ids"]
+        target_mask = tgt_tokens["attention_mask"].bool()
+        target_ids = target_ids.masked_fill(~target_mask, -100)
+        return {"input_ids": inp_tokens["input_ids"], "attention_mask": inp_tokens["attention_mask"],
+                "labels": target_ids}
 
-        # Create the attention masks
-        attention_masks = [[int(token_id != self.tokenizer.pad_token_id) for token_id in input_ids] for input_ids in
-                           tokenized_inputs["input_ids"]]
-
-        # Create the PyTorch tensors
-        input_ids = torch.tensor(tokenized_inputs["input_ids"], dtype=torch.long)
-        attention_masks = torch.tensor(attention_masks, dtype=torch.long)
-        target_ids = torch.tensor(tokenized_targets["input_ids"], dtype=torch.long)
-        target_ids = torch.where(target_ids == self.tokenizer.pad_token_id, -100 * torch.ones_like(target_ids),
-                                 target_ids)
-
-        return {"input_ids": input_ids, "attention_mask": attention_masks, "labels": target_ids}
-
-    def get_dataloader(self, dataset: datasets.arrow_dataset.Dataset, types_train: bool = False,
-                       dynamic_batch_collate: bool = False) -> DataLoader:
+    def get_dataloader(self, dataset, shuffle_flag: bool = False) -> DataLoader:
         """
-        Returns a dataloader for the given dataset using the specified batch size and collator.
-        The dataloader returned is for either training or validation depending on the value of types_train.
-        :param dataset (datasets.arrow_dataset.Dataset): The dataset to create a dataloader for.
-        :param types_train (bool): A boolean indicating whether the returned dataloader is for
-                                    training or validation.
-        :return:
-            DataLoader: A dataloader for the given dataset using the specified batch size and collator.
+        :param dataset: (Dataset): dataset from which to load the data.
+        :param shuffle_flag: set to ``True`` to have the data reshuffled
+                at every epoch (default: ``False``).
+        :return: a dataset
         """
-        dataloader: DataLoader
-        label_pad_token_id = -100 if self.ignore_pad_token_for_loss else self.tokenizer.pad_token_id
-        data_collator = None
-        if dynamic_batch_collate:
-            data_collator = self.dynamic_collate
-        else:
-            data_collator = DataCollatorForSeq2Seq(tokenizer,
-                                                   model=self.model,
-                                                   label_pad_token_id=label_pad_token_id,
-                                                   pad_to_multiple_of=None,
-                                                   padding=self.padding
-                                                   )
-        if types_train:
-            dataloader = DataLoader(dataset,
-                                    collate_fn=data_collator,
-                                    batch_size=self.train_batch_size,
-                                    shuffle=True)
-        else:
-            train_sampler = SequentialSampler(dataset)
-            dataloader = DataLoader(dataset,
-                                    collate_fn=data_collator,
-                                    batch_size=self.val_batch_size,
-                                    sampler=train_sampler,
-                                    shuffle=False)
+
+        sampler = RandomSampler(dataset) if shuffle_flag else SequentialSampler(dataset)
+        dataloader = DataLoader(dataset,
+                                sampler= sampler,
+                                collate_fn=self.data_collator,
+                                batch_size=self.batch_size)
 
         return dataloader
