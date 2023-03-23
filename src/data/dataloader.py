@@ -1,23 +1,20 @@
-from typing import Optional, Dict, List, Union
-import json
+from typing import Optional, Dict, List, Union, Set
 import datasets
 import torch
 from os.path import join
-from datasets import DatasetDict, load_dataset, Dataset, concatenate_datasets
+from datasets import DatasetDict, load_dataset, concatenate_datasets
 from torch.utils.data import RandomSampler, SequentialSampler
 from torch.utils.data.dataloader import DataLoader
-from transformers import AutoModel, AutoTokenizer, DataCollatorForSeq2Seq
+from transformers import AutoTokenizer
 from accelerate import Accelerator
 
 
 class StateDataloader():
     def __init__(self,
-                 model: AutoModel,
-                 tokenizer: AutoTokenizer,
-
-                 dataset_name: str,
+                 model_name: str,
                  text_column: str,
                  target_column: str,
+
                  train_file: Union[str, List[str]],
                  val_file: Optional[Union[str, List[str]]],
                  test_file: Optional[Union[str, List[str]]],
@@ -29,24 +26,19 @@ class StateDataloader():
                  max_len_instruction: int = 512,
                  max_len_response: int = 80,
 
+                 padding: str = 'longest',
+
                  dynamic_batch_collate: bool = False,
-                 train_batch_size: int = 8,
-                 val_batch_size: int = 4,
+                 batch_size: int = 8,
 
                  seed: int = 42,
-                 preprocessing_num_workers: int = 2,
-                 ignore_pad_token_for_loss: bool = True,
-                 dataset_config_name: Optional[str] = None,
-                 new_special_tokens: Optional[Dict[str, str]] = None,
                  max_train_samples: Optional[int] = None,
                  max_eval_samples: Optional[int] = None,
                  max_predict_samples: Optional[int] = None
                  ) -> None:
 
-        self.model = model
-        self.tokenizer = tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-        self.dataset_name = dataset_name
         self.text_column = text_column
         self.target_column = target_column
         self.train_file = train_file
@@ -60,69 +52,59 @@ class StateDataloader():
         self.max_len_instruction = max_len_instruction
         self.max_len_response = max_len_response
 
-        self.padding = 'longest'
+        self.padding = padding
 
         self.dynamic_batch_collate = dynamic_batch_collate
-        self.train_batch_size = train_batch_size
-        self.val_batch_size = val_batch_size
+        self.batch_size = batch_size
 
         self.seed = seed
-        self.preprocessing_num_workers = preprocessing_num_workers
-        self.ignore_pad_token_for_loss = ignore_pad_token_for_loss
-        self.dataset_config_name = dataset_config_name
-        self.new_special_tokens = new_special_tokens
 
         self.max_train_samples = max_train_samples
         self.max_eval_samples = max_eval_samples
         self.max_predict_samples = max_predict_samples
 
-        self.train_dataset = None
-        self.eval_dataset = None
-        self.test_dataset = None
-        self.accelerator = Accelerator()
-
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Union[Set[DataLoader],Set]:
         dataloaders = {}
         if not self.do_train and not self.do_eval and not self.do_predict:
             print("There is nothing to do. Please pass `do_train`, `do_eval` and/or `do_predict`.")
-            return
+            return dataloaders
 
         if self.train_file is not None:
             if isinstance(self.train_file, str):
                 print('\nLoading train dataset' + '.' * 10)
-                self.train_dataset = self.load_data('train', self.train_file)
+                train_dataset = self.load_data('train', self.train_file)
             else:
                 print('\nLoading mutiple train datasets' + '.' * 10)
-                self.train_dataset = self.load_data('train', self.train_file, multiple=True)
+                train_dataset = self.load_data('train', self.train_file, multiple=True)
         if self.val_file is not None:
             if isinstance(self.val_file, str):
                 print('\nLoading validation dataset' + '.' * 10)
-                self.eval_dataset = self.load_data('val', self.val_file)
+                eval_dataset = self.load_data('val', self.val_file)
             else:
                 print('\nLoading mutiple validation datasets' + '.' * 10)
-                self.eval_dataset = self.load_data('val', self.val_file, multiple=True)
+                eval_dataset = self.load_data('val', self.val_file, multiple=True)
         if self.test_file is not None:
             if isinstance(self.test_file, str):
                 print('\nLoading test dataset' + '.' * 10)
-                self.test_dataset = self.load_data('test', self.test_file)
+                test_dataset = self.load_data('test', self.test_file)
             else:
                 print('\nLoading mutiple test datasets' + '.' * 10)
-                self.test_dataset = self.load_data('test', self.test_file, multiple=True)
+                test_dataset = self.load_data('test', self.test_file, multiple=True)
 
-        if self.do_train and self.train_dataset is not None:
+        if self.do_train and train_dataset is not None:
             if self.max_train_samples is not None:
-                self.train_dataset = self.train_dataset.select(range(self.max_train_samples))
-            dataloaders['train'] = self.get_dataloader(self.train_dataset, shuffle_flag=True)
+                train_dataset = train_dataset.select(range(self.max_train_samples))
+            dataloaders['train'] = self.get_dataloader(train_dataset, shuffle_flag=True)
 
-        if self.do_eval and self.eval_dataset is not None:
+        if self.do_eval and eval_dataset is not None:
             if self.max_eval_samples is not None:
-                self.eval_dataset = self.eval_dataset.select(range(self.max_eval_samples))
-            dataloaders['eval'] = self.get_dataloader(self.eval_dataset)
+                eval_dataset = eval_dataset.select(range(self.max_eval_samples))
+            dataloaders['eval'] = self.get_dataloader(eval_dataset)
 
-        if self.do_predict and self.test_dataset is not None:
+        if self.do_predict and test_dataset is not None:
             if self.max_predict_samples is not None:
-                self.test_dataset = self.test_dataset.select(range(self.max_predict_samples))
-            dataloaders['test'] = self.get_dataloader(self.test_dataset)
+                test_dataset = test_dataset.select(range(self.max_predict_samples))
+            dataloaders['test'] = self.get_dataloader(test_dataset)
 
         return dataloaders
 
@@ -162,7 +144,15 @@ class StateDataloader():
         """
         A collate function that tokenizes the inputs and targets, and applies dynamic padding and truncation
         based on the maximum length in the batch.
+
+        Args:
+            batch (list): A list of examples, where each example is a dictionary with a text column and a target column.
+
+        Returns:
+            dict: A dictionary with the input IDs, attention masks, and target IDs with attention masks where tokens are padded,
+            and the target IDs are masked to exclude padded values.
         """
+
         inputs = [example[self.text_column] for example in batch]
         targets = [example[self.target_column] for example in batch]
 
@@ -197,11 +187,13 @@ class StateDataloader():
                 at every epoch (default: ``False``).
         :return: a dataset
         """
-
-        sampler = RandomSampler(dataset) if shuffle_flag else SequentialSampler(dataset)
+        generator = torch.Generator()
+        generator.manual_seed(self.seed)
+        sampler = RandomSampler(data_source=dataset,generator=generator) if shuffle_flag else SequentialSampler(dataset)
         dataloader = DataLoader(dataset,
                                 sampler= sampler,
-                                collate_fn=self.data_collator,
-                                batch_size=self.batch_size)
+                                collate_fn=self.dynamic_collate,
+                                batch_size=self.batch_size
+                                )
 
         return dataloader
