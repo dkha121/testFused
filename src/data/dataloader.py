@@ -65,6 +65,7 @@ class StateDataloader():
 
     def __call__(self, *args, **kwargs) -> Union[Set[DataLoader],Set]:
         dataloaders = {}
+
         if not self.do_train and not self.do_eval and not self.do_predict:
             print("There is nothing to do. Please pass `do_train`, `do_eval` and/or `do_predict`.")
             return dataloaders

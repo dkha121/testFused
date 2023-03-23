@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r'./')
+sys.path.insert(0, r'C:\Users\Tuan Pham\Desktop\Study\SelfStudy\venv2\BaseLineV1\state_prediction\dev')
 from src.data.dataloader import StateDataloader
 from training_loop import Trainer
 from accelerate import notebook_launcher
@@ -14,15 +14,15 @@ def parse_args(args):
 
     parser.add_argument('--train_files', nargs='+', help= "Directory to train file")
 
-    parser.add_argument('--val_files', nargs='+', help= "Directory to validation file")
+    parser.add_argument('--val_files', nargs='+',default = None, help= "Directory to validation file")
 
-    parser.add_argument('--test_files', nargs='+', help= "Directory to test file")
+    parser.add_argument('--test_files', nargs='+', default = None, help= "Directory to test file")
 
     parser.add_argument('--model_name', type=str, default="lucadiliello/bart-small", help ="model name")
 
     parser.add_argument('--batch_size', type=int, default=2, help="batch size for the dataloader")
 
-    parser.add_argument('--max_train_samples', type=int, default=2000, help="number of train samples")
+    parser.add_argument('--max_train_samples', type=int, default=1000, help="number of train samples")
 
     parser.add_argument('--max_eval_samples', type=int, default=100,  help="number of validation samples")
 
@@ -37,17 +37,17 @@ def parse_args(args):
             "Only applicable when `--with_tracking` is passed."
         ))
 
-    parser.add_argument('--num_train_epochs', type=int, default=3, help="number training epochs")
+    parser.add_argument('--num_train_epochs', type=int, default=10, help="number training epochs")
 
-    parser.add_argument('--val_max_target_length', type=int, default=80, help="max length labels tokenize")
+    parser.add_argument('--val_max_target_length', type=int, default=60, help="max length labels tokenize")
 
     parser.add_argument('--num_beams', type=int, default=4, help="number of beams")
 
-    parser.add_argument('--weight_decay', type=float, default=0.4,  help="Weight decay to use.")
+    parser.add_argument('--weight_decay', type=float, default=0.3,  help="Weight decay to use.")
 
     parser.add_argument('--mixed_precision', type=str, default='fp16')
 
-    parser.add_argument('--gradient_accumulation_steps', type=int, default=2,  help="Number of updates steps to accumulate before performing a backward/update pass.")
+    parser.add_argument('--gradient_accumulation_steps', type=int, default=1,  help="Number of updates steps to accumulate before performing a backward/update pass.")
 
     parser.add_argument('--with_tracking', type=bool, default=True, help="Whether to enable experiment trackers for logging.")
 
@@ -55,7 +55,7 @@ def parse_args(args):
 
     parser.add_argument('--do_eval', type=bool, default=True)
 
-    parser.add_argument('--do_predict', type=bool, default=True)
+    parser.add_argument('--do_predict', type=bool, default=False)
 
     parser.add_argument('--text_column', type=str, default='prompt')
 
