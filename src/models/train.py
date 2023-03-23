@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, r'C:\Users\Tuan Pham\Desktop\Study\SelfStudy\venv2\BaseLineV1\state_prediction\dev')
+sys.path.insert(0, r'')
+
 from src.data.dataloader import StateDataloader
 from training_loop import Trainer
 from accelerate import notebook_launcher
