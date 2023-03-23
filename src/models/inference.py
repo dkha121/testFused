@@ -1,9 +1,8 @@
 from transformers import PreTrainedTokenizerFast
 from transformers import BartForConditionalGeneration
 
-path_to_tokenizerjson = r'C:\Users\Tuan Pham\Desktop\Study\SelfStudy\venv2\BaseLineV1\state_prediction\dev\output\tokenizer.json'
-path_to_save_dir = r'C:\Users\Tuan Pham\Desktop\Study\SelfStudy\venv2\BaseLineV1\state_prediction\dev\output'
-
+path_to_tokenizerjson = r' '
+path_to_save_dir = r' '
 
 # Load the tokenizer from the tokenizer.json file
 tokenizer = PreTrainedTokenizerFast(tokenizer_file=path_to_tokenizerjson)

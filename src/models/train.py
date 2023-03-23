@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, './')
+sys.path.insert(0, r'./')
 from src.data.dataloader import StateDataloader
 from training_loop import Trainer
 from accelerate import notebook_launcher
@@ -77,9 +77,9 @@ def main(args):
         "target_column": args.target_column,
         "train_file": args.train_files,
         "do_train": args.do_train,
-        "val_file": args.val_file,
+        "val_file": args.val_files,
         "do_eval": args.do_eval,
-        "test_file": args.test_file,
+        "test_file": args.test_files,
         "do_predict": args.do_predict,
         "batch_size": args.batch_size,
         "max_train_samples": args.max_train_samples,
@@ -93,7 +93,7 @@ def main(args):
     trainer_args = {
         "model_name_or_path": args.model_name,
         "output_dir": args.output_dir,
-        "dataloaders": args.dataloaders,
+        "dataloaders": dataloaders,
         "lr_scheduler_type": args.lr_scheduler_type,
         "seed": args.seed,
         "with_tracking": args.with_tracking,

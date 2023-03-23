@@ -30,7 +30,7 @@ from transformers.utils import check_min_version, is_offline_mode
 from transformers.utils.versions import require_version
 
 from evaluation import Evaluation
-# check_min_version("4.27.0.dev0")
+
 
 logger = get_logger(__name__)
 require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/language-modeling/requirements.txt")
