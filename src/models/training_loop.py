@@ -4,7 +4,7 @@ import logging
 import math
 import os
 from pathlib import Path
-from typing import Set, Optional
+from typing import Set, Optional, Union
 from typing_extensions import Literal
 import datasets
 import evaluate
@@ -70,7 +70,7 @@ class Trainer():
                  model_type: Optional[str] = None,
 
                  checkpointing_steps: Optional[str] = None,
-                 resume_from_checkpoint: Optional[str] = None,
+                 resume_from_checkpoint: Optional[Union[str,bool]] = False,
                  with_tracking: bool = False,
                  report_to: Optional[str] = None):
 
@@ -212,6 +212,9 @@ class Trainer():
             optimizer, dataloaders['train'], dataloaders['eval'], lr_scheduler
         )
 
+        accelerator.register_for_checkpointing(lr_scheduler)
+
+
         # We need to recalculate our total training steps as the size of the training dataloader may have changed.
         self.num_update_steps_per_epoch = math.ceil(len(dataloaders['train']) / self.gradient_accumulation_steps)
         if overrode_max_train_steps:
@@ -292,6 +295,7 @@ class Trainer():
                 resume_step = int(training_difference.replace("step_", "")) * self.gradient_accumulation_steps
                 starting_epoch = resume_step // len(dataloaders['train'])
                 resume_step -= starting_epoch * len(dataloaders['train'])
+
 
         # update the progress_bar if load from checkpoint
         progress_bar.update(starting_epoch * self.num_update_steps_per_epoch)

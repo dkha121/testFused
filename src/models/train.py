@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r'')
+sys.path.insert(0, r' ')
 
 from src.data.dataloader import StateDataloader
 from training_loop import Trainer
@@ -62,6 +62,10 @@ def parse_args(args):
 
     parser.add_argument('--target_column', type=str, default='output')
 
+    parser.add_argument('--checkpointing_steps', type=str, default=None)
+
+    parser.add_argument('--resume_from_checkpoint', type=str, default=None)
+
     args = parser.parse_args(args)
 
     return args
@@ -96,6 +100,8 @@ def main(args):
         "output_dir": args.output_dir,
         "dataloaders": dataloaders,
         "lr_scheduler_type": args.lr_scheduler_type,
+        "checkpointing_steps": args.checkpointing_steps,
+        "resume_from_checkpoint": args.resume_from_checkpoint,
         "seed": args.seed,
         "with_tracking": args.with_tracking,
         "report_to": args.report_to,
