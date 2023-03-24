@@ -151,6 +151,7 @@ class Trainer():
         embedding_size = self.model.get_input_embeddings().weight.shape[0]
         if len(self.tokenizer) > embedding_size:
             self.model.resize_token_embeddings(len(self.tokenizer))
+
         if self.model.config.decoder_start_token_id is None:
             raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
 
@@ -277,7 +278,9 @@ class Trainer():
             tb_writer.add_scalar('eval_loss', total_loss_eval / len(self.dataloaders['eval']), completed_steps)
             for key, value in result.items():
                 tb_writer.add_scalar('eval_{}'.format(key), value, completed_steps)
-
+        self.tokenizer.save_pretrained(self.output_dir)
+        self.model.save_pretrained(self.output_dir)
+        print("Save model success")
 
     def evaluate(self):
         eval_loss = 0
