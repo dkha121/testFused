@@ -5,7 +5,10 @@ nltk==3.8.1
 numpy==1.22.3
 pandas==1.4.2
 setuptools==62.0.0
-torch==1.11.0+cu113
+torch==1.12.0+cu113 --extra-index-url https://download.pytorch.org/whl/cu116
 tqdm==4.64.1
 transformers==4.27.2
 typing_extensions==4.5.0
+evaluate==0.4.0
+pyarrow==9.0.0
+rouge_score==0.1.2
