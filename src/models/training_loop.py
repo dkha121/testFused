@@ -353,7 +353,7 @@ class Trainer():
                 logger.info(result)
                 if self.with_tracking:
                     result["train_loss"] = total_loss.item() / len(dataloaders['train'])
-
+                    result["epoch"] = epoch
                     result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
                     accelerator.log(result, step=completed_steps)
             else:
