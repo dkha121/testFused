@@ -40,6 +40,6 @@ FusedChat https://drive.google.com/drive/folders/103hQEK8PXr0yKlvEt_tkSmo7oTbQBr
 
 ## Training
 ```shell
-bash tune-idb0.sh
+bash run_training.sh
 ```
-* **Please update your parameters in the tune-idb0.sh file**
+* **Please update your parameters in the run_training.sh file**
