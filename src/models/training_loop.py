@@ -353,13 +353,17 @@ class Trainer():
                 logger.info(result)
                 if self.with_tracking:
                     result["train_loss"] = total_loss.item() / len(dataloaders['train'])
-                    result["epoch"] = epoch
+
                     result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
                     accelerator.log(result, step=completed_steps)
             else:
                 result = {}
                 if self.with_tracking:
+                    result["epoch"] = epoch
                     result["train_loss"] = total_loss.item() / len(dataloaders['train'])
+                    accelerator.log(result, step=completed_steps)
+
+
             if self.checkpointing_steps == "epoch":
                 output_dir = f"epoch_{epoch}"
                 if self.output_dir is not None:
