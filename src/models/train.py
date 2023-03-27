@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r' ')
+sys.path.insert(0, r' ') #Add root directory here
 
 from src.data.dataloader import StateDataloader
 from training_loop import Trainer
@@ -67,6 +67,8 @@ def parse_args(args):
 
     parser.add_argument('--resume_from_checkpoint', type=str, default=None)
 
+    parser.add_argument('--do_eval_per_epoch', type=bool, default=False)
+
     args = parser.parse_args(args)
 
     return args
@@ -113,7 +115,8 @@ def main(args):
         "mixed_precision": args.mixed_precision,
         "per_device_train_batch_size":dataloaders.batch_size,
         "per_device_eval_batch_size":dataloaders.batch_size,
-        "gradient_accumulation_steps": args.gradient_accumulation_steps
+        "gradient_accumulation_steps": args.gradient_accumulation_steps,
+        "do_eval_per_epoch": args.do_eval_per_epoch
     }
 
     trainer = Trainer(**trainer_args)

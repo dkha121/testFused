@@ -12,6 +12,7 @@ accelerate launch --config_file "src/config/config_fsdp.yaml" src/models/train.p
 	--gradient_accumulation_steps 2 \
 	--with_tracking True  \
 	--report_to wandb \
-	--checkpointing_steps epoch
+	--checkpointing_steps epoch \
+	--do_eval_per_epoch False
 
 

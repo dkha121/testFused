@@ -72,7 +72,8 @@ class Trainer():
                  checkpointing_steps: Optional[str] = "epoch",
                  resume_from_checkpoint: Optional[Union[str,bool]] = False,
                  with_tracking: bool = False,
-                 report_to: Optional[str] = None):
+                 report_to: Optional[str] = None,
+                 do_eval_per_epoch: Optional[bool] = False):
 
         # Save the input parameters
         self.model_name_or_path = model_name_or_path
@@ -107,6 +108,7 @@ class Trainer():
         self.resume_from_checkpoint = resume_from_checkpoint
         self.with_tracking = with_tracking
         self.report_to = report_to
+        self.do_eval_per_epoch = do_eval_per_epoch
 
 
     def train(self):
@@ -342,17 +344,18 @@ class Trainer():
 
 
             #Eval per epoch
-            if self.with_tracking:
-                result, total_loss_eval = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, model = model)
-            else:
-                result = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, model = model)
+            if self.do_eval_per_epoch:
+                if self.with_tracking:
+                    result, total_loss_eval = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, model = model)
+                else:
+                    result = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, model = model)
 
-            logger.info(result)
-            if self.with_tracking:
-                result["train_loss"] = total_loss.item() / len(dataloaders['train'])
-                result["epoch"] = epoch
-                result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
-                accelerator.log(result, step=completed_steps)
+                logger.info(result)
+                if self.with_tracking:
+                    result["train_loss"] = total_loss.item() / len(dataloaders['train'])
+                    result["epoch"] = epoch
+                    result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
+                    accelerator.log(result, step=completed_steps)
 
             if self.checkpointing_steps == "epoch":
                 output_dir = f"epoch_{epoch}"
