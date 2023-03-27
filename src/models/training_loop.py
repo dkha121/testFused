@@ -69,7 +69,7 @@ class Trainer():
                  seed: Optional[int] = None,
                  model_type: Optional[str] = None,
 
-                 checkpointing_steps: Optional[str] = None,
+                 checkpointing_steps: Optional[str] = "epoch",
                  resume_from_checkpoint: Optional[Union[str,bool]] = False,
                  with_tracking: bool = False,
                  report_to: Optional[str] = None):
@@ -343,9 +343,9 @@ class Trainer():
 
             #Eval per epoch
             if self.with_tracking:
-                result, total_loss_eval = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, metric = metric, model = model)
+                result, total_loss_eval = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, model = model)
             else:
-                result = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, metric = metric, model = model)
+                result = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, model = model)
 
             logger.info(result)
             if self.with_tracking:

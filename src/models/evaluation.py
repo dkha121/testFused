@@ -25,7 +25,7 @@ class Evaluation:
         self.num_beams = num_beams
         self.val_max_target_length = val_max_target_length
 
-    def eval(self,accelerator,tokenizer,metric,model):
+    def eval(self,accelerator,tokenizer,model):
         model.eval()
         gen_kwargs = {
             "max_length": self.val_max_target_length,
@@ -73,7 +73,7 @@ class Evaluation:
                 loss = outputs.loss
                 if self.with_tracking:
                     total_loss_eval += loss.detach().float()
-        result = metric.compute(use_stemmer=True)
+        result = self.metric.compute(use_stemmer=True)
         result = {k: round(v * 100, 4) for k, v in result.items()}
 
         if self.with_tracking:

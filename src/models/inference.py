@@ -3,7 +3,9 @@ from transformers import BartForConditionalGeneration
 import argparse
 import sys
 
+
 def parse_args(args):
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--path_to_tokenizerjson', type=str, help="Path to the tokenizer json file")
@@ -37,3 +39,4 @@ def main(args):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+

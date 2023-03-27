@@ -8,6 +8,7 @@ import os
 import argparse
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+
 def parse_args(args):
     parser = argparse.ArgumentParser()
 
@@ -116,8 +117,8 @@ def main(args):
     }
 
     trainer = Trainer(**trainer_args)
-    notebook_launcher(trainer.train,num_processes=1)
-
+    # notebook_launcher(trainer.train,num_processes=1)
+    trainer.train()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
