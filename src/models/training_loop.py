@@ -357,6 +357,7 @@ class Trainer():
                     result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
                     accelerator.log(result, step=completed_steps)
             else:
+                result = {}
                 if self.with_tracking:
                     result["train_loss"] = total_loss.item() / len(dataloaders['train'])
             if self.checkpointing_steps == "epoch":
