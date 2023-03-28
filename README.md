@@ -31,10 +31,7 @@ optional arguments:
 
 ## Dowload link
 
-
-Wizard of Internet(Raw and processed): https://www.transferxl.com/download/04j2SvjZrY2Ggk <br />
-
-FusedChat https://drive.google.com/drive/folders/103hQEK8PXr0yKlvEt_tkSmo7oTbQBreM (download test_fusedchat.json to test) <br />
+Dataset after converted: https://drive.google.com/drive/folders/1QWqcj9vRSWrW77DJhUxndpFQFlrX2kAp
 
 
 
