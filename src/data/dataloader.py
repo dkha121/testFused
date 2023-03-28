@@ -23,12 +23,6 @@ class StateDataloader():
                  do_eval: bool = False,
                  do_predict: bool = False,
 
-                 max_len_instruction: int = 512,
-                 max_len_response: int = 80,
-
-                 padding: str = 'longest',
-
-                 dynamic_batch_collate: bool = False,
                  batch_size: int = 8,
 
                  seed: int = 42,
@@ -38,27 +32,16 @@ class StateDataloader():
                  ) -> None:
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-
         self.text_column = text_column
         self.target_column = target_column
         self.train_file = train_file
         self.val_file = val_file
         self.test_file = test_file
-
         self.do_train = do_train
         self.do_eval = do_eval
         self.do_predict = do_predict
-
-        self.max_len_instruction = max_len_instruction
-        self.max_len_response = max_len_response
-
-        self.padding = padding
-
-        self.dynamic_batch_collate = dynamic_batch_collate
         self.batch_size = batch_size
-
         self.seed = seed
-
         self.max_train_samples = max_train_samples
         self.max_eval_samples = max_eval_samples
         self.max_predict_samples = max_predict_samples
@@ -112,11 +95,13 @@ class StateDataloader():
     def load_data(self, key: str, data_file: Union[str, List[str]], multiple: bool = False) -> DatasetDict:
         """
         Loads a dataset from a file on disk and returns it as a dictionary of Dataset objects.
+
         Args:
             key (str): The key to assign to the loaded dataset in the returned dictionary of Dataset objects.
             data_file (Union[str, List[str]]): The path or paths to the data file(s) to load. If multiple is True, data_file
                                                 should be a list of file paths. Otherwise, it should be a single file path.
             mutiple (bool): A flag that indicates whether the data_file argument is a list of multiple file paths.
+
         Returns:
             A dictionary of Dataset objects that represents the loaded dataset. If mutiple is True, the function
             concatenates the datasets from the multiple files before returning them. Otherwise, it returns a single
@@ -143,8 +128,10 @@ class StateDataloader():
         """
         A collate function that tokenizes the inputs and targets, and applies dynamic padding and truncation
         based on the maximum length in the batch.
+
         Args:
             batch (list): A list of examples, where each example is a dictionary with a text column and a target column.
+
         Returns:
             dict: A dictionary with the input IDs, attention masks, and target IDs with attention masks where tokens are padded,
             and the target IDs are masked to exclude padded values.
@@ -153,24 +140,18 @@ class StateDataloader():
         inputs = [example[self.text_column] for example in batch]
         targets = [example[self.target_column] for example in batch]
 
-        # Get the maximum length in the batch
-
-        max_len = max(len(self.tokenizer.encode(input)) + len(self.tokenizer.encode(target)) for input, target in
-                      zip(inputs, targets))
-
-        max_len = min(max_len, self.max_len_instruction) if self.max_len_instruction is not None else max_len
 
         inp_tokens = self.tokenizer.batch_encode_plus(
             inputs,
-            max_length=max_len if max_len > 0 else None, return_tensors="pt",
-            pad_to_max_length=True,
-            truncation=True if max_len > 0 else False,
+            padding=True,
+            return_tensors="pt",
+            truncation=True,
         )
         tgt_tokens = self.tokenizer.batch_encode_plus(
             targets,
-            max_length=max_len if max_len > 0 else None, pad_to_max_length=True,
+            padding=True,
             return_tensors="pt",
-            truncation=True if max_len > 0 else False,
+            truncation=True,
         )
         target_ids = tgt_tokens["input_ids"]
         target_mask = tgt_tokens["attention_mask"].bool()
