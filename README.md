@@ -32,14 +32,12 @@ optional arguments:
 ## Dowload link
 
 
-Wizard of Internet(Raw and processed): https://www.transferxl.com/download/04j2SvjZrY2Ggk <br />
-
-FusedChat https://drive.google.com/drive/folders/103hQEK8PXr0yKlvEt_tkSmo7oTbQBreM (download test_fusedchat.json to test) <br />
+Dataset after converter : https://drive.google.com/drive/folders/1QWqcj9vRSWrW77DJhUxndpFQFlrX2kAp
 
 
 
 ## Training
 ```shell
-bash tune-idb0.sh
+python train.py --output_dir <path_of_output_dir> --train_files <path_of_training> --val_files <path_of_validation> --max_train_samples <number samples train> --max_eval_samples <number samples evaluate>  
 ```
 * **Please update your parameters in the tune-idb0.sh file**
