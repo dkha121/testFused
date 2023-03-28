@@ -8,11 +8,12 @@ accelerate launch --config_file "src/config/config_fsdp.yaml" src/models/train.p
 	--max_eval_samples  50  \
 	--num_beams   4 \
 	--weight_decay  0.3 \
+	--learning_rate 5e-5 \
 	--mixed_precision fp16  \
 	--gradient_accumulation_steps 2 \
 	--with_tracking True  \
 	--report_to wandb \
 	--checkpointing_steps epoch \
-	--do_eval_per_epoch False
+	--do_eval_per_epoch True \
 
 

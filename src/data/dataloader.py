@@ -9,7 +9,7 @@ from transformers import AutoTokenizer
 from accelerate import Accelerator
 
 
-class StateDataloader():
+class StateDataloader:
     def __init__(self,
                  model_name: str,
                  text_column: str,
@@ -23,12 +23,6 @@ class StateDataloader():
                  do_eval: bool = False,
                  do_predict: bool = False,
 
-                 max_len_instruction: int = 512,
-                 max_len_response: int = 80,
-
-                 padding: str = 'longest',
-
-                 dynamic_batch_collate: bool = False,
                  batch_size: int = 8,
 
                  seed: int = 42,
@@ -49,16 +43,9 @@ class StateDataloader():
         self.do_eval = do_eval
         self.do_predict = do_predict
 
-        self.max_len_instruction = max_len_instruction
-        self.max_len_response = max_len_response
-
-        self.padding = padding
-
-        self.dynamic_batch_collate = dynamic_batch_collate
         self.batch_size = batch_size
 
         self.seed = seed
-
         self.max_train_samples = max_train_samples
         self.max_eval_samples = max_eval_samples
         self.max_predict_samples = max_predict_samples
@@ -157,27 +144,22 @@ class StateDataloader():
         inputs = [example[self.text_column] for example in batch]
         targets = [example[self.target_column] for example in batch]
 
-        # Get the maximum length in the batch
-
-        max_len = max(len(self.tokenizer.encode(input)) + len(self.tokenizer.encode(target)) for input, target in
-                      zip(inputs, targets))
-        max_len = min(max_len, self.max_len_instruction) if self.max_len_instruction is not None else max_len
-
         inp_tokens = self.tokenizer.batch_encode_plus(
             inputs,
-            max_length=max_len if max_len > 0 else None, return_tensors="pt",
-            pad_to_max_length=True,
-            truncation=True if max_len > 0 else False,
+            padding=True,
+            return_tensors="pt",
+            truncation=True,
         )
         tgt_tokens = self.tokenizer.batch_encode_plus(
             targets,
-            max_length=max_len if max_len > 0 else None, pad_to_max_length=True,
+            padding=True,
             return_tensors="pt",
-            truncation=True if max_len > 0 else False,
+            truncation=True,
         )
         target_ids = tgt_tokens["input_ids"]
         target_mask = tgt_tokens["attention_mask"].bool()
         target_ids = target_ids.masked_fill(~target_mask, -100)
+
         return {"input_ids": inp_tokens["input_ids"], "attention_mask": inp_tokens["attention_mask"],
                 "labels": target_ids}
 

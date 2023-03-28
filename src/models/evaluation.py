@@ -13,8 +13,7 @@ class Evaluation:
                  ignore_pad_token_for_loss: bool = True,
                  with_tracking: bool = False,
                  num_beams: Optional[int] = 4,
-                 val_max_target_length: Optional[int] = 50,
-
+                 max_target_length: Optional[int] = 60
                  ):
 
         self.eval_dataloaders = eval_dataloaders
@@ -23,16 +22,16 @@ class Evaluation:
         self.metric = metric
         self.with_tracking = with_tracking
         self.num_beams = num_beams
-        self.val_max_target_length = val_max_target_length
+        self.max_target_length = max_target_length
 
     def eval(self,accelerator,tokenizer,model):
         model.eval()
         gen_kwargs = {
-            "max_length": self.val_max_target_length,
+            "max_length": self.max_target_length,
             "num_beams": self.num_beams,
         }
+        total_loss_eval = 0
         for step, batch in enumerate(self.eval_dataloaders):
-            total_loss_eval = 0
             with torch.no_grad():
                 generated_tokens = accelerator.unwrap_model(model).generate(
                     batch["input_ids"],
