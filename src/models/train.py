@@ -122,8 +122,7 @@ def main(args):
         "num_beams": args.num_beams,
         "weight_decay": args.weight_decay,
         "mixed_precision": args.mixed_precision,
-        "per_device_train_batch_size":dataloaders.batch_size,
-        "per_device_eval_batch_size":dataloaders.batch_size,
+        "per_device_batch_size":dataloaders.batch_size,
         "gradient_accumulation_steps": args.gradient_accumulation_steps,
         "do_eval_per_epoch": args.do_eval_per_epoch,
         "learning_rate": args.learning_rate

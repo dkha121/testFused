@@ -48,8 +48,7 @@ class Trainer:
 
                  use_slow_tokenizer: bool = False,
 
-                 per_device_train_batch_size: Optional[int] = 8,
-                 per_device_eval_batch_size: Optional[int] = 8,
+                 per_device_batch_size: Optional[int] = 8,
 
                  learning_rate: Optional[float] = 5e-5,
                  weight_decay: Optional[float] = 0.0,
@@ -84,8 +83,7 @@ class Trainer:
 
         self.use_slow_tokenizer = use_slow_tokenizer
 
-        self.per_device_train_batch_size = per_device_train_batch_size
-        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.per_device_batch_size = per_device_batch_size
 
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
@@ -227,7 +225,7 @@ class Trainer:
                 "max_target_length": self.max_target_length,
                 "num_beams": self.num_beams,
                 "pad_to_max_length": self.pad_to_max_length,
-                "per_device_train_batch_size": self.per_device_train_batch_size,
+                "per_device_batch_size": self.per_device_batch_size,
                 "learning_rate": self.learning_rate,
                 "weight_decay": self.weight_decay,
                 "num_train_epochs": self.num_train_epochs,
@@ -251,12 +249,12 @@ class Trainer:
                                metric = metric, with_tracking = self.with_tracking, num_beams = self.num_beams, max_target_length = self.max_target_length)
 
 
-        total_batch_size = self.per_device_train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
+        total_batch_size = self.per_device_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
 
         logger.info("***** Running training *****")
         logger.info(f"  Num examples = {len(dataloaders['train'])}")
         logger.info(f"  Num Epochs = {self.num_train_epochs}")
-        logger.info(f"  Instantaneous batch size per device = {self.per_device_train_batch_size}")
+        logger.info(f"  Instantaneous batch size per device = {self.per_device_batch_size}")
         logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
         logger.info(f"  Gradient Accumulation steps = {self.gradient_accumulation_steps}")
         logger.info(f"  Total optimization steps = {self.max_train_steps}")
