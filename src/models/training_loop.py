@@ -47,19 +47,13 @@ class Trainer():
              model_name_or_path: str,
              output_dir: str,
              dataloaders: Set[DataLoader],
-
-             val_max_target_length: Optional[int] = 50,
              ignore_pad_token_for_loss: bool = True,
              num_beams: Optional[int] = 4,
              pad_to_max_length: bool = True,
              config_name: Optional[str] = None,
              tokenizer_name: Optional[str] = None,
-
              use_slow_tokenizer: bool = False,
-
              per_device_train_batch_size: Optional[int] = 8,
-             per_device_eval_batch_size: Optional[int] = 8,
-
              learning_rate: Optional[float] = 5e-5,
              weight_decay: Optional[float] = 0.0,
              num_train_epochs: Optional[int] = 3,
@@ -69,12 +63,9 @@ class Trainer():
                                            "constant_with_warmup"],
              num_warmup_steps: Optional[int] = 0,
              mixed_precision: Literal = ['no', 'fp16', 'bf16'],
-
              seed: Optional[int] = None,
              model_type: Optional[str] = None,
-
              checkpointing_steps: Optional[str] = None,
-             resume_from_checkpoint: Optional[str] = None,
              with_tracking: bool = False,
              report_to: Optional[str] = None):
 
@@ -82,19 +73,13 @@ class Trainer():
         self.model_name_or_path = model_name_or_path
         self.output_dir = output_dir
         self.dataloaders = dataloaders
-
-        self.val_max_target_length = val_max_target_length
         self.ignore_pad_token_for_loss = ignore_pad_token_for_loss
         self.num_beams = num_beams
         self.pad_to_max_length = pad_to_max_length
         self.config_name = config_name
         self.tokenizer_name = tokenizer_name
-
         self.use_slow_tokenizer = use_slow_tokenizer
-
         self.per_device_train_batch_size = per_device_train_batch_size
-        self.per_device_eval_batch_size = per_device_eval_batch_size
-
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.num_train_epochs = num_train_epochs
@@ -103,19 +88,12 @@ class Trainer():
         self.lr_scheduler_type = lr_scheduler_type
         self.num_warmup_steps = num_warmup_steps
         self.mixed_precision = mixed_precision
-
         self.seed = seed
         self.model_type = model_type
-
         self.checkpointing_steps = checkpointing_steps
-        self.resume_from_checkpoint = resume_from_checkpoint
         self.with_tracking = with_tracking
         self.report_to = report_to
-
-
         self.dataloaders = self.dataloaders.__call__()
-
-
 
         if self.config_name:
             config = AutoConfig.from_pretrained(self.config_name)
@@ -205,7 +183,7 @@ class Trainer():
         if self.with_tracking:
             experiment_config = {
                 "model_name_or_path": self.model_name_or_path,
-                "val_max_target_length": self.val_max_target_length,
+
                 "num_beams": self.num_beams,
                 "pad_to_max_length": self.pad_to_max_length,
                 "per_device_train_batch_size": self.per_device_train_batch_size,
@@ -246,7 +224,7 @@ class Trainer():
         tb_writer = SummaryWriter('experiment')
         progress_bar = tqdm(range(self.max_train_steps))
 
-
+        list_eval_loss = []
         progress_bar.update(starting_epoch * self.num_update_steps_per_epoch)
         completed_steps = starting_epoch * self.num_update_steps_per_epoch
         for epoch in range(starting_epoch, self.num_train_epochs):
@@ -273,14 +251,20 @@ class Trainer():
                 if completed_steps >= self.max_train_steps:
                     break
             eval_loss, result = self.evaluate()
+            # Save model in lowest eval loss
+            list_eval_loss.append(eval_loss)
+            min_eval_loss = min(list_eval_loss)
+            if eval_loss <= min_eval_loss:
+                self.tokenizer.save_pretrained(self.output_dir)
+                self.model.save_pretrained(self.output_dir)
+                print("Save best model in epoch: " + str(epoch))
             total_loss_eval += eval_loss
             tb_writer.add_scalar('train_loss', total_loss.item() / len(self.dataloaders['train']), completed_steps)
             tb_writer.add_scalar('eval_loss', total_loss_eval / len(self.dataloaders['eval']), completed_steps)
             for key, value in result.items():
                 tb_writer.add_scalar('eval_{}'.format(key), value, completed_steps)
-        self.tokenizer.save_pretrained(self.output_dir)
-        self.model.save_pretrained(self.output_dir)
-        print("Save model success")
+
+
 
     def evaluate(self):
         eval_loss = 0
