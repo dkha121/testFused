@@ -1,11 +1,11 @@
-accelerate launch --config_file "src/config/config_fsdp.yaml" src/models/train.py 	\
+accelerate launch --config_file src/config/config_fsdp.yaml src/models/train.py 	\
   --num_train_epochs 10 \
-	--output_dir " "  \
-	--train_files  " " " " \
-	--val_files   " " " "  \
+	--output_dir "./output"  \
+	--train_files  "./ketod/train_sample.json" "./fused_chat/train_sample.json" "./woi/train_sample.json"\
+	--val_files   "./ketod/valid_sample.json" "./fused_chat/valid_sample.json" "./woi/valid_sample.json" \
 	--batch_size    2 \
-	--max_train_samples 200 \
-	--max_eval_samples  50  \
+	--max_train_samples None \
+	--max_eval_samples  None  \
 	--num_beams   4 \
 	--weight_decay  0.3 \
 	--learning_rate 5e-5 \

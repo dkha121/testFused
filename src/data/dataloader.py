@@ -1,6 +1,7 @@
-from typing import Optional, Dict, List, Union, Set
 import datasets
 import torch
+
+from typing import Optional, Dict, List, Union, Set
 from os.path import join
 from datasets import DatasetDict, load_dataset, concatenate_datasets
 from torch.utils.data import RandomSampler, SequentialSampler
@@ -14,17 +15,10 @@ class StateDataloader:
                  model_name: str,
                  text_column: str,
                  target_column: str,
-
                  train_file: Union[str, List[str]],
                  val_file: Optional[Union[str, List[str]]],
                  test_file: Optional[Union[str, List[str]]],
-
-                 do_train: bool = False,
-                 do_eval: bool = False,
-                 do_predict: bool = False,
-
                  batch_size: int = 8,
-
                  seed: int = 42,
                  max_train_samples: Optional[int] = None,
                  max_eval_samples: Optional[int] = None,
@@ -38,11 +32,6 @@ class StateDataloader:
         self.train_file = train_file
         self.val_file = val_file
         self.test_file = test_file
-
-        self.do_train = do_train
-        self.do_eval = do_eval
-        self.do_predict = do_predict
-
         self.batch_size = batch_size
 
         self.seed = seed
@@ -50,53 +39,35 @@ class StateDataloader:
         self.max_eval_samples = max_eval_samples
         self.max_predict_samples = max_predict_samples
 
+
     def __call__(self, *args, **kwargs) -> Union[Set[DataLoader],Set]:
         dataloaders = {}
 
-        if not self.do_train and not self.do_eval and not self.do_predict:
-            print("There is nothing to do. Please pass `do_train`, `do_eval` and/or `do_predict`.")
-            return dataloaders
-
         if self.train_file is not None:
-            if isinstance(self.train_file, str):
-                print('\nLoading train dataset' + '.' * 10)
-                train_dataset = self.load_data('train', self.train_file)
-            else:
-                print('\nLoading mutiple train datasets' + '.' * 10)
-                train_dataset = self.load_data('train', self.train_file, multiple=True)
-        if self.val_file is not None:
-            if isinstance(self.val_file, str):
-                print('\nLoading validation dataset' + '.' * 10)
-                eval_dataset = self.load_data('val', self.val_file)
-            else:
-                print('\nLoading mutiple validation datasets' + '.' * 10)
-                eval_dataset = self.load_data('val', self.val_file, multiple=True)
-        if self.test_file is not None:
-            if isinstance(self.test_file, str):
-                print('\nLoading test dataset' + '.' * 10)
-                test_dataset = self.load_data('test', self.test_file)
-            else:
-                print('\nLoading mutiple test datasets' + '.' * 10)
-                test_dataset = self.load_data('test', self.test_file, multiple=True)
-
-        if self.do_train and train_dataset is not None:
+            print('\nLoading train datasets' + '.' * 10)
+            train_dataset = self.load_data('train', self.train_file)
             if self.max_train_samples is not None:
                 train_dataset = train_dataset.select(range(self.max_train_samples))
             dataloaders['train'] = self.get_dataloader(train_dataset, shuffle_flag=True)
 
-        if self.do_eval and eval_dataset is not None:
+        if self.val_file is not None:
+            print('\nLoading validation datasets' + '.' * 10)
+            eval_dataset = self.load_data('val', self.val_file)
             if self.max_eval_samples is not None:
                 eval_dataset = eval_dataset.select(range(self.max_eval_samples))
             dataloaders['eval'] = self.get_dataloader(eval_dataset)
 
-        if self.do_predict and test_dataset is not None:
+        if self.test_file is not None:
+            print('\nLoading test datasets' + '.' * 10)
+            test_dataset = self.load_data('test', self.test_file)
             if self.max_predict_samples is not None:
                 test_dataset = test_dataset.select(range(self.max_predict_samples))
             dataloaders['test'] = self.get_dataloader(test_dataset)
 
         return dataloaders
 
-    def load_data(self, key: str, data_file: Union[str, List[str]], multiple: bool = False) -> DatasetDict:
+
+    def load_data(self, key: str, data_file: List[str]) -> DatasetDict:
         """
         Loads a dataset from a file on disk and returns it as a dictionary of Dataset objects.
 
@@ -112,19 +83,13 @@ class StateDataloader:
             dataset loaded from the data_file path.
         """
 
-        if multiple:
-            dataset_list = []
-            for file in data_file:
-                data_files = {key: file}
-                extension = file.split(".")[-1]
-                dataset_list.append(load_dataset(extension, data_files=data_files, split=key))
-            dataset = concatenate_datasets(dataset_list)
-            dataset.shuffle(self.seed)
-            return dataset
-
-        data_files = {key: data_file}
-        extension = data_file.split(".")[-1]
-        dataset = load_dataset(extension, data_files=data_files, split=key)
+        dataset_list = []
+        for file in data_file:
+            data_files = {key: file}
+            extension = file.split(".")[-1]
+            dataset_list.append(load_dataset(extension, data_files=data_files, split=key))
+        dataset = concatenate_datasets(dataset_list)
+        dataset.shuffle(self.seed)
         return dataset
 
 
@@ -160,8 +125,10 @@ class StateDataloader:
         target_mask = tgt_tokens["attention_mask"].bool()
         target_ids = target_ids.masked_fill(~target_mask, -100)
 
-        return {"input_ids": inp_tokens["input_ids"], "attention_mask": inp_tokens["attention_mask"],
+        return {"input_ids": inp_tokens["input_ids"],
+                "attention_mask": inp_tokens["attention_mask"],
                 "labels": target_ids}
+
 
     def get_dataloader(self, dataset, shuffle_flag: bool = False) -> DataLoader:
         """

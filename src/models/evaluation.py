@@ -1,14 +1,16 @@
+import numpy as np
+import torch
 import evaluate
 import nltk
-from torch.utils.data.dataloader import DataLoader
-import torch
+
 from typing import Optional
-import numpy as np
+from torch.utils.data.dataloader import DataLoader
+
 
 class Evaluation:
     def __init__(self,
-                 eval_dataloaders: DataLoader,
                  metric,
+                 eval_dataloaders: DataLoader,
                  pad_to_max_length: bool = True,
                  ignore_pad_token_for_loss: bool = True,
                  with_tracking: bool = False,
@@ -23,6 +25,7 @@ class Evaluation:
         self.with_tracking = with_tracking
         self.num_beams = num_beams
         self.max_target_length = max_target_length
+
 
     def eval(self,accelerator,tokenizer,model):
         model.eval()
@@ -78,6 +81,7 @@ class Evaluation:
         if self.with_tracking:
             return result, total_loss_eval
         return result
+
 
     def postprocess_text(self, preds, labels):
         preds = [pred.strip() for pred in preds]

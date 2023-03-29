@@ -3,20 +3,18 @@ import json
 import logging
 import math
 import os
+import numpy as np
+import torch
 from pathlib import Path
 from typing import Set, Optional, Union
 from typing_extensions import Literal
+from torch.utils.data.dataloader import DataLoader
+from tqdm.auto import tqdm
+
+# Transformers
+import transformers
 import datasets
 import evaluate
-import numpy as np
-import torch
-from torch.utils.data.dataloader import DataLoader
-from accelerate import Accelerator
-from accelerate.logging import get_logger
-from accelerate.utils import set_seed
-from tqdm.auto import tqdm
-import transformers
-from accelerate.utils import set_seed  # reproducability across devices
 from transformers import (
     CONFIG_MAPPING,
     MODEL_MAPPING,
@@ -26,7 +24,9 @@ from transformers import (
     get_scheduler
 )
 from evaluation import Evaluation
-
+from accelerate import Accelerator
+from accelerate.logging import get_logger
+from accelerate.utils import set_seed  # reproducability across devices
 
 logger = get_logger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_MAPPING.keys())
@@ -38,18 +38,14 @@ class Trainer:
                  model_name_or_path: str,
                  output_dir: str,
                  dataloaders: Set[DataLoader],
-
                  max_target_length: Optional[int] = 60,
                  ignore_pad_token_for_loss: bool = True,
                  num_beams: Optional[int] = 4,
                  pad_to_max_length: bool = True,
                  config_name: Optional[str] = None,
                  tokenizer_name: Optional[str] = None,
-
                  use_slow_tokenizer: bool = False,
-
                  per_device_batch_size: Optional[int] = 8,
-
                  learning_rate: Optional[float] = 5e-5,
                  weight_decay: Optional[float] = 0.0,
                  num_train_epochs: Optional[int] = 3,
@@ -59,10 +55,8 @@ class Trainer:
                                                "constant_with_warmup"],
                  num_warmup_steps: Optional[int] = 0,
                  mixed_precision: Literal = ['no','fp16','bf16'],
-
                  seed: Optional[int] = None,
                  model_type: Optional[str] = None,
-
                  checkpointing_steps: Optional[Union[str,int]] = "epoch",
                  resume_from_checkpoint: Optional[Union[str,bool]] = False,
                  with_tracking: bool = False,
@@ -71,6 +65,7 @@ class Trainer:
 
         # Save the input parameters
         self.model_name_or_path = model_name_or_path
+        self.model_type = model_type
         self.output_dir = output_dir
         self.dataloaders = dataloaders
 
@@ -80,11 +75,9 @@ class Trainer:
         self.pad_to_max_length = pad_to_max_length
         self.config_name = config_name
         self.tokenizer_name = tokenizer_name
-
         self.use_slow_tokenizer = use_slow_tokenizer
 
         self.per_device_batch_size = per_device_batch_size
-
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.num_train_epochs = num_train_epochs
@@ -95,7 +88,6 @@ class Trainer:
         self.mixed_precision = mixed_precision
 
         self.seed = seed
-        self.model_type = model_type
 
         self.checkpointing_steps = checkpointing_steps
         self.resume_from_checkpoint = resume_from_checkpoint
@@ -108,22 +100,26 @@ class Trainer:
 
         accelerator_log_kwargs = {}
 
-        set_seed(self.seed)
+        if self.seed is not None:
+            set_seed(self.seed)
 
         if self.with_tracking:
             accelerator_log_kwargs["log_with"] = self.report_to
             accelerator_log_kwargs["logging_dir"] = self.output_dir
 
-        accelerator = Accelerator(gradient_accumulation_steps=self.gradient_accumulation_steps, mixed_precision = self.mixed_precision,
-                                       **accelerator_log_kwargs)
+        accelerator = Accelerator(gradient_accumulation_steps=self.gradient_accumulation_steps,
+                                  mixed_precision = self.mixed_precision,
+                                  **accelerator_log_kwargs)
 
         dataloaders = self.dataloaders.__call__()
+
         logging.basicConfig(
             format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
             datefmt="%m/%d/%Y %H:%M:%S",
             level=logging.INFO,
         )
         logger.info(accelerator.state, main_process_only=False)
+
         if accelerator.is_local_main_process:
             datasets.utils.logging.set_verbosity_warning()
             transformers.utils.logging.set_verbosity_info()
@@ -149,6 +145,7 @@ class Trainer:
                 "You are instantiating a new tokenizer from scratch. This is not supported by this script."
                 "You can do it from another script, save it, and load it from here, using --tokenizer_name."
             )
+
         device = accelerator.device
         with accelerator.main_process_first():
             if self.model_name_or_path:
@@ -170,9 +167,6 @@ class Trainer:
             model.resize_token_embeddings(len(tokenizer))
         if model.config.decoder_start_token_id is None:
             raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
-
-        if self.seed is not None:
-            set_seed(self.seed)
 
         # Set up the optimizer
         no_decay = ["bias", "LayerNorm.weight", "layer_norm.weight"]
@@ -201,13 +195,11 @@ class Trainer:
             num_training_steps=self.max_train_steps * self.gradient_accumulation_steps,
         )
 
-
         optimizer, dataloaders['train'], dataloaders['eval'], lr_scheduler = accelerator.prepare(
             optimizer, dataloaders['train'], dataloaders['eval'], lr_scheduler
         )
 
         accelerator.register_for_checkpointing(lr_scheduler)
-
 
         # We need to recalculate our total training steps as the size of the training dataloader may have changed.
         self.num_update_steps_per_epoch = math.ceil(len(dataloaders['train']) / self.gradient_accumulation_steps)
@@ -245,9 +237,13 @@ class Trainer:
 
         # Metric
         metric = evaluate.load("rouge")
-        evaluator = Evaluation(eval_dataloaders = dataloaders['eval'], pad_to_max_length = self.pad_to_max_length,ignore_pad_token_for_loss = self.ignore_pad_token_for_loss,
-                               metric = metric, with_tracking = self.with_tracking, num_beams = self.num_beams, max_target_length = self.max_target_length)
-
+        evaluator = Evaluation(eval_dataloaders = dataloaders['eval'],
+                               pad_to_max_length = self.pad_to_max_length,
+                               ignore_pad_token_for_loss = self.ignore_pad_token_for_loss,
+                               metric = metric,
+                               with_tracking = self.with_tracking,
+                               num_beams = self.num_beams,
+                               max_target_length = self.max_target_length)
 
         total_batch_size = self.per_device_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
 
@@ -321,7 +317,8 @@ class Trainer:
                     progress_bar.update(1)
                     completed_steps += 1
                 if isinstance(self.checkpointing_steps, int):
-                    self.save_cpkt(accelerator, checkpointing_steps=self.checkpointing_steps,completed_steps=completed_steps)
+                    self.save_cpkt(accelerator, checkpointing_steps=self.checkpointing_steps,
+                                   completed_steps=completed_steps)
 
                 if completed_steps >= self.max_train_steps:
                     break
@@ -329,9 +326,11 @@ class Trainer:
             #Eval per epoch
             if self.do_eval_per_epoch:
                 if self.with_tracking:
-                    result, total_loss_eval = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, model = model)
+                    result, total_loss_eval = evaluator.eval(accelerator = accelerator,
+                                                             tokenizer = tokenizer, model = model)
                 else:
-                    result = evaluator.eval(accelerator = accelerator, tokenizer = tokenizer, model = model)
+                    result = evaluator.eval(accelerator = accelerator,
+                                            tokenizer = tokenizer, model = model)
 
                 logger.info(result)
                 if self.with_tracking:
@@ -340,6 +339,10 @@ class Trainer:
                     result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
                     eval_losses.append(result['eval_loss'])
                     accelerator.log(result, step=completed_steps)
+                    logger.info(f"*** TRAINING LOSS AT EPOCH {epoch} ***")
+                    logger.info(result["train_loss"])
+                    logger.info(f"*** EVAL LOSS AT EPOCH {epoch} ***")
+                    logger.info(result["eval_loss"])
 
                 if self.output_dir is not None:
                     if result["eval_loss"] == min(eval_losses):
@@ -354,10 +357,11 @@ class Trainer:
                     result["epoch"] = epoch
                     result["train_loss"] = total_loss.item() / len(dataloaders['train'])
                     accelerator.log(result, step=completed_steps)
+                    logger.info(f"*** TRAINING LOSS AT EPOCH {epoch} ***")
+                    logger.info(result["train_loss"])
 
             if self.checkpointing_steps == "epoch":
                 self.save_cpkt(accelerator,checkpointing_steps=self.checkpointing_steps,epoch=epoch)
-
 
         if self.with_tracking:
             accelerator.end_training()
@@ -378,6 +382,7 @@ class Trainer:
             all_results = {f"eval_{k}": v for k, v in result.items()}
             with open(os.path.join(self.output_dir, "all_results.json"), "w") as f:
                 json.dump(all_results, f)
+
 
     def save_cpkt(self,accelerator,checkpointing_steps, epoch=None, completed_steps=None):
         if checkpointing_steps == "epoch":
