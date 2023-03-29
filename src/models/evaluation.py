@@ -34,13 +34,14 @@ class Evaluation:
             "num_beams": self.num_beams,
         }
         total_loss_eval = 0
+        samples_seen = 0
         for step, batch in enumerate(self.eval_dataloaders):
+            if samples_seen == 0 and accelerator.distributed_type == DistributedType.FSDP:
+                model(**batch)
             with torch.no_grad():
-                batch_input_ids = batch["input_ids"]
-                batch_attention_mask = batch["attention_mask"]
                 generated_tokens = accelerator.unwrap_model(model).generate(
-                    batch_input_ids,
-                    attention_mask=batch_attention_mask,
+                    batch["input_ids"],
+                    attention_mask=batch["attention_mask"],
                     **gen_kwargs,
                 )
 
@@ -66,6 +67,15 @@ class Evaluation:
                 decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
 
                 decoded_preds, decoded_labels = self.postprocess_text(decoded_preds, decoded_labels)
+
+                # If we are in a multiprocess environment, the last batch has duplicates
+                if accelerator.num_processes > 1:
+                    if step == len(self.eval_dataloaders) - 1:
+                        decoded_preds = decoded_preds[: len(self.eval_dataloaders.dataset) - samples_seen]
+                        decoded_labels = decoded_labels[: len(self.eval_dataloaders.dataset) - samples_seen]
+                    else:
+                        samples_seen += len(decoded_labels)
+
                 self.metric.add_batch(
                     predictions=decoded_preds,
                     references=decoded_labels,
