@@ -15,7 +15,7 @@ class Evaluation:
                  ignore_pad_token_for_loss: bool = True,
                  with_tracking: bool = False,
                  num_beams: Optional[int] = 4,
-                 max_target_length: Optional[int] = 60
+                 max_target_length: Optional[int] = 40
                  ):
 
         self.eval_dataloaders = eval_dataloaders

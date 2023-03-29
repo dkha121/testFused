@@ -38,7 +38,7 @@ class Trainer:
                  model_name_or_path: str,
                  output_dir: str,
                  dataloaders: Set[DataLoader],
-                 max_target_length: Optional[int] = 60,
+                 max_target_length: Optional[int] = 40,
                  ignore_pad_token_for_loss: bool = True,
                  num_beams: Optional[int] = 4,
                  pad_to_max_length: bool = True,
