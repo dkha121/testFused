@@ -1,14 +1,15 @@
 accelerate==0.17.0
-datasets==2.10.1
+datasets>=2.8.0
 filelock==3.10.3
-nltk==3.8.1
-numpy==1.22.3
-pandas==1.4.2
+nltk>=3.7
+numpy>=1.17.5
+pandas>=1.4.0
 setuptools==62.0.0
-torch==1.12.0+cu113 --extra-index-url https://download.pytorch.org/whl/cu116
+--extra-index-url https://download.pytorch.org/whl/cu116
+torch==1.12.0+cu113
 tqdm==4.64.1
 transformers==4.27.2
 typing_extensions==4.5.0
 evaluate==0.4.0
-pyarrow==9.0.0
-rouge_score==0.1.2
+pyarrow>=7.0.0
+rouge_score>=0.1

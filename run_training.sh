@@ -4,8 +4,6 @@ accelerate launch --config_file src/config/config_fsdp.yaml src/models/train.py 
 	--train_files  "./ketod/train_sample.json" "./fused_chat/train_sample.json" "./woi/train_sample.json"\
 	--val_files   "./ketod/valid_sample.json" "./fused_chat/valid_sample.json" "./woi/valid_sample.json" \
 	--batch_size    2 \
-	--max_train_samples None \
-	--max_eval_samples  None  \
 	--num_beams   4 \
 	--weight_decay  0.3 \
 	--learning_rate 5e-5 \
@@ -14,6 +12,6 @@ accelerate launch --config_file src/config/config_fsdp.yaml src/models/train.py 
 	--with_tracking True  \
 	--report_to wandb \
 	--checkpointing_steps epoch \
-	--do_eval_per_epoch True \
+	--do_eval_per_epoch True
 
 
