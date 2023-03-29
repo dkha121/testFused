@@ -1,4 +1,4 @@
-accelerate launch --config_file src/config/config_fsdp.yaml src/models/train.py 	\
+accelerate launch --config_file src/config/config_defaultMultiGPU.yaml src/models/train.py 	\
   --num_train_epochs 10 \
 	--output_dir "./output"  \
 	--train_files  "./ketod/train_sample.json" "./fused_chat/train_sample.json" "./woi/train_sample.json"\
