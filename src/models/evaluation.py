@@ -5,7 +5,7 @@ import nltk
 
 from typing import Optional
 from torch.utils.data.dataloader import DataLoader
-
+from accelerate.utils import DistributedType
 
 class Evaluation:
     def __init__(self,
