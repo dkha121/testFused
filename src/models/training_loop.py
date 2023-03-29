@@ -158,8 +158,6 @@ class Trainer:
                 logger.info("Training new model from scratch")
                 self.model = AutoModelForSeq2SeqLM.from_config(config).to(device)
 
-        model = accelerator.prepare(self.model)
-
         # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
         # on a small vocab and want a smaller embedding size, remove this test.
         embedding_size = model.get_input_embeddings().weight.shape[0]
@@ -167,6 +165,8 @@ class Trainer:
             model.resize_token_embeddings(len(tokenizer))
         if model.config.decoder_start_token_id is None:
             raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
+
+        model = accelerator.prepare(self.model)
 
         # Set up the optimizer
         no_decay = ["bias", "LayerNorm.weight", "layer_norm.weight"]
