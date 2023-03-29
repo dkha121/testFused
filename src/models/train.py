@@ -1,7 +1,7 @@
 import sys
 import os
 import argparse
-sys.path.insert(0,r'C:\Users\Tuan Pham\Desktop\Study\SelfStudy\venv2\BaseLineV1\state_prediction\dev') #Add root directory here
+sys.path.insert(0,r'./') #Add root directory here
 
 from src.data.dataloader import StateDataloader
 from training_loop import Trainer
