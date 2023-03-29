@@ -36,9 +36,11 @@ class Evaluation:
         total_loss_eval = 0
         for step, batch in enumerate(self.eval_dataloaders):
             with torch.no_grad():
+                batch_input_ids = batch["input_ids"]
+                batch_attention_mask = batch["attention_mask"]
                 generated_tokens = accelerator.unwrap_model(model).generate(
-                    batch["input_ids"],
-                    attention_mask=batch["attention_mask"],
+                    batch_input_ids,
+                    attention_mask=batch_attention_mask,
                     **gen_kwargs,
                 )
 
