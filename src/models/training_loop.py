@@ -233,8 +233,15 @@ class Trainer:
                 experiment_config["lr_scheduler_type"] = experiment_config["lr_scheduler_type"]
             else:
                 experiment_config["lr_scheduler_type"] = experiment_config["lr_scheduler_type"].value
-            accelerator.init_trackers("state_prediction", experiment_config)
-
+            i=0
+            name = "state_prediction"
+            while True:
+                try:
+                    accelerator.init_trackers(name,experiment_config)
+                    break
+                except Exception:
+                    name = name + str(i)
+                    i+=1
         # Metric
         metric = evaluate.load("rouge")
         evaluator = Evaluation(eval_dataloaders = dataloaders['eval'],
@@ -309,8 +316,9 @@ class Trainer:
                     lr_scheduler.step()
                     optimizer.zero_grad()
                     if self.with_tracking:
-                        total_loss += loss.detach().float()
-                        accelerator.log({"training_loss_batch": loss.detach().float()}, step=step)
+                        loss_detached = loss.detach().float()
+                        total_loss += loss_detached
+                        accelerator.log({"training_loss_batch": float(loss_detached)}, step=step)
 
                 # Checks if the accelerator has performed an optimization step behind the scenes
                 if accelerator.sync_gradients:

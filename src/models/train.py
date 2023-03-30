@@ -15,9 +15,9 @@ def parse_args(args):
     parser.add_argument('--output_dir', type=str, help="The output directory to save")
     parser.add_argument('--train_files', nargs='+', help= "Directory to train file (can be multiple files)")
     parser.add_argument('--text_column', type=str, default='prompt',
-                        help="The name of the column in the datasets containing the full texts (for summarization).")
+                        help="The name of the column in the datasets containing the full texts .")
     parser.add_argument('--target_column', type=str, default='output',
-                        help="The name of the column in the label containing the full texts (for summarization).")
+                        help="The name of the column in the label containing the full texts .")
     parser.add_argument('--val_files', nargs='+',default = None,
                         help= "Directory to validation file (can be multiple files)")
     parser.add_argument('--test_files', nargs='+', default = None,
@@ -51,7 +51,7 @@ def parse_args(args):
                         help="Whether to run evaluate per epoch.")
     parser.add_argument('--report_to', type=str, default='wandb',help=(
             'The integration to report the results and logs to. Supported platforms are `"tensorboard"`,'
-            ' `"wandb"`, `"comet_ml"` and `"clearml"`. Use `"all"` (default) to report to all integrations.'
+            ' `"wandb"`,'"mlflow"', `"comet_ml"` and `"clearml"`. Use `"all"` (default) to report to all integrations.'
             "Only applicable when `--with_tracking` is passed."
         ))
 
