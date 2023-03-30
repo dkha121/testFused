@@ -8,13 +8,8 @@ pip install -r requirements.txt
 
 ## Convert dataset 
 ```shell
-python datareader/data_converter.py --ketod_dataset <path_of_ketod> --ketod_sample <out_path_of_ketod> --schema_guided <path_of_schema> --context_window <window_context>
+python src/features/data_converter.py --ketod_dataset <path_of_ketod> --ketod_sample <out_path_of_ketod> --fusedchat_dataset <path_of_fused> --fused_sample <out_path_of_fused> --woi_dataset <path_of_woi> --woi_sample <out_path_of_woi> --schema_guided <path_of_schema> --context_window <window_context>
 
-
-python datareader/data_converter.py --woi_dataset <path_of_woi> --woi_sample <out_path_of_woi> --context_window <window_context>
-
-
-python datareader/data_converter.py --fusedchat_dataset <path_of_fused> --fused_sample <out_path_of_fused> --schema_guided <path_of_schema> --context_window <window_context>
 
 ```
 ```commandline
