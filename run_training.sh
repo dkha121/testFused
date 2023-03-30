@@ -10,7 +10,7 @@ accelerate launch --config_file src/config/config_defaultMultiGPU.yaml src/model
 	--mixed_precision fp16  \
 	--gradient_accumulation_steps 2 \
 	--with_tracking True  \
-	--report_to wandb \
+	--report_to mlflow \
 	--checkpointing_steps epoch \
 	--do_eval_per_epoch True
 
