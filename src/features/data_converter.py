@@ -1,5 +1,5 @@
-# import sys
-# sys.path.append("./")
+import sys
+sys.path.append("./")
 from src.features.datareader.fusedchat_reader import FUSEDCHATReader
 from src.features.datareader.ketod_reader import KETODReader
 from src.features.datareader.WoI_reader import WOIReader

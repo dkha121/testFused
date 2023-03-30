@@ -1,4 +1,4 @@
-from datareader import ontology
+from src.config import ontology
 
 path_schema_guided = ""
 EOT_SEP = "[EOT]. "
