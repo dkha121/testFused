@@ -48,10 +48,16 @@ class Evaluation:
                 generated_tokens = accelerator.pad_across_processes(
                     generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
                 )
+
+                generated_tokens = accelerator.pad_across_processes(
+                    generated_tokens, dim=0, pad_index=tokenizer.pad_token_id
+                )
                 labels = batch["labels"]
                 if not self.pad_to_max_length:
                     # If we did not pad to max length, we need to pad the labels too
                     labels = accelerator.pad_across_processes(batch["labels"], dim=1,
+                                                              pad_index=tokenizer.pad_token_id)
+                    labels = accelerator.pad_across_processes(labels, dim=0,
                                                               pad_index=tokenizer.pad_token_id)
 
                 generated_tokens = accelerator.gather(generated_tokens).cpu().numpy()
