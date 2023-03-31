@@ -243,7 +243,7 @@ class Trainer:
                     name = name + str(i)
                     i+=1
         # Metric
-        metric = evaluate.load("rouge")
+        metric = evaluate.load("rouge",num_process=2)
         evaluator = Evaluation(eval_dataloaders = dataloaders['eval'],
                                pad_to_max_length = self.pad_to_max_length,
                                ignore_pad_token_for_loss = self.ignore_pad_token_for_loss,
