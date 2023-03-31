@@ -70,7 +70,7 @@ def parse_args(args):
     # validate and convert the input argument
     try:
         args.checkpointing_steps = int(args.checkpointing_steps)  # try to convert to int
-    except ValueError:
+    except:
         args.checkpointing_steps = args.checkpointing_steps  # if conversion fails, assume it's a string
 
     return args
