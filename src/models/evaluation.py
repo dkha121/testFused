@@ -49,22 +49,18 @@ class Evaluation:
                     generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
                 )
 
-                generated_tokens = accelerator.pad_across_processes(
-                    generated_tokens, dim=0, pad_index=tokenizer.pad_token_id
-                )
                 print("PROCESS_generated_tokens: "+str(accelerator.process_index)+str(generated_tokens.shape))
                 labels = batch["labels"]
 
                 # If we did not pad to max length, we need to pad the labels too
                 labels = accelerator.pad_across_processes(batch["labels"], dim=1,
                                                           pad_index=tokenizer.pad_token_id)
-                labels = accelerator.pad_across_processes(labels, dim=0,
-                                                          pad_index=tokenizer.pad_token_id)
 
                 print("PROCESS_labels_tokens: " + str(accelerator.process_index) + str(labels.shape))
                 generated_tokens = accelerator.gather(generated_tokens).cpu().numpy()
                 labels = accelerator.gather(labels).cpu().numpy()
-
+                print(str(generated_tokens) + str(accelerator.process_index))
+                print(str(labels) + str(accelerator.process_index))
                 if self.ignore_pad_token_for_loss:
                     # Replace -100 in the labels as we can't decode them.
                     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
@@ -72,9 +68,11 @@ class Evaluation:
                     generated_tokens = generated_tokens[0]
                 decoded_preds = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
                 decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
-
+                print("DECODED_PREDICT: " + str(accelerator.process_index) +str(decoded_preds))
+                print("DECODED_PREDICT: " + str(accelerator.process_index) +str(decoded_labels))
                 decoded_preds, decoded_labels = self.postprocess_text(decoded_preds, decoded_labels)
-
+                print("DECODED_PROCESS_TEXT: " + str(accelerator.process_index) +str(decoded_preds))
+                print("DECODED_PROCESS_TEXT: " + str(accelerator.process_index) +str(decoded_labels))
                 # If we are in a multiprocess environment, the last batch has duplicates
                 if accelerator.num_processes > 1:
                     if step == len(self.eval_dataloaders) - 1:
@@ -88,6 +86,7 @@ class Evaluation:
                     references=decoded_labels,
                 )
 
+                print("METRIC_ADD_BATCH: " + str(accelerator.process_index))
                 # Compute and log the loss
                 outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
                                 labels=batch["labels"])
