@@ -45,53 +45,53 @@ class Evaluation:
                     **gen_kwargs,
                 )
 
-                generated_tokens = accelerator.pad_across_processes(
-                    generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
-                )
+            generated_tokens = accelerator.pad_across_processes(
+                generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
+            )
 
-                generated_tokens = accelerator.pad_across_processes(
-                    generated_tokens, dim=0, pad_index=tokenizer.pad_token_id
-                )
-                labels = batch["labels"]
-                if not self.pad_to_max_length:
-                    # If we did not pad to max length, we need to pad the labels too
-                    labels = accelerator.pad_across_processes(batch["labels"], dim=1,
-                                                              pad_index=tokenizer.pad_token_id)
-                    labels = accelerator.pad_across_processes(labels, dim=0,
-                                                              pad_index=tokenizer.pad_token_id)
+            generated_tokens = accelerator.pad_across_processes(
+                generated_tokens, dim=0, pad_index=tokenizer.pad_token_id
+            )
+            labels = batch["labels"]
+            if not self.pad_to_max_length:
+                # If we did not pad to max length, we need to pad the labels too
+                labels = accelerator.pad_across_processes(batch["labels"], dim=1,
+                                                          pad_index=tokenizer.pad_token_id)
+                labels = accelerator.pad_across_processes(labels, dim=0,
+                                                          pad_index=tokenizer.pad_token_id)
 
-                generated_tokens = accelerator.gather(generated_tokens).cpu().numpy()
-                labels = accelerator.gather(labels).cpu().numpy()
+            generated_tokens = accelerator.gather(generated_tokens).cpu().numpy()
+            labels = accelerator.gather(labels).cpu().numpy()
 
-                if self.ignore_pad_token_for_loss:
-                    # Replace -100 in the labels as we can't decode them.
-                    labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
-                if isinstance(generated_tokens, tuple):
-                    generated_tokens = generated_tokens[0]
-                decoded_preds = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
-                decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+            if self.ignore_pad_token_for_loss:
+                # Replace -100 in the labels as we can't decode them.
+                labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
+            if isinstance(generated_tokens, tuple):
+                generated_tokens = generated_tokens[0]
+            decoded_preds = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
+            decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
 
-                decoded_preds, decoded_labels = self.postprocess_text(decoded_preds, decoded_labels)
+            decoded_preds, decoded_labels = self.postprocess_text(decoded_preds, decoded_labels)
 
-                # If we are in a multiprocess environment, the last batch has duplicates
-                if accelerator.num_processes > 1:
-                    if step == len(self.eval_dataloaders) - 1:
-                        decoded_preds = decoded_preds[: len(self.eval_dataloaders.dataset) - samples_seen]
-                        decoded_labels = decoded_labels[: len(self.eval_dataloaders.dataset) - samples_seen]
-                    else:
-                        samples_seen += len(decoded_labels)
+            # If we are in a multiprocess environment, the last batch has duplicates
+            if accelerator.num_processes > 1:
+                if step == len(self.eval_dataloaders) - 1:
+                    decoded_preds = decoded_preds[: len(self.eval_dataloaders.dataset) - samples_seen]
+                    decoded_labels = decoded_labels[: len(self.eval_dataloaders.dataset) - samples_seen]
+                else:
+                    samples_seen += len(decoded_labels)
 
-                self.metric.add_batch(
-                    predictions=decoded_preds,
-                    references=decoded_labels,
-                )
+            self.metric.add_batch(
+                predictions=decoded_preds,
+                references=decoded_labels,
+            )
 
-                # Compute and log the loss
-                outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
-                                labels=batch["labels"])
-                loss = outputs.loss
-                if self.with_tracking:
-                    total_loss_eval += loss.detach().float()
+            # Compute and log the loss
+            outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
+                            labels=batch["labels"])
+            loss = outputs.loss
+            if self.with_tracking:
+                total_loss_eval += loss.detach().float()
         result = self.metric.compute(use_stemmer=True)
         result = {k: round(v * 100, 4) for k, v in result.items()}
 
