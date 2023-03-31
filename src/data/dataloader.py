@@ -6,7 +6,7 @@ from os.path import join
 from datasets import DatasetDict, load_dataset, concatenate_datasets
 from torch.utils.data import RandomSampler, SequentialSampler
 from torch.utils.data.dataloader import DataLoader
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModel, DataCollatorForSeq2Seq
 from accelerate import Accelerator
 
 
