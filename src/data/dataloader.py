@@ -147,6 +147,7 @@ class StateDataloader:
                 label_pad_token_id=-100,
                 pad_to_multiple_of=8
             )
+            dataset = dataset.remove_columns(['prompt', 'output'])
             dataloader = DataLoader(dataset,
                                     sampler=sampler,
                                     collate_fn=data_collator,
