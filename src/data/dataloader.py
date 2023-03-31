@@ -6,7 +6,7 @@ from os.path import join
 from datasets import DatasetDict, load_dataset, concatenate_datasets
 from torch.utils.data import RandomSampler, SequentialSampler
 from torch.utils.data.dataloader import DataLoader
-from transformers import AutoTokenizer, AutoModel, DataCollatorForSeq2Seq
+from transformers import AutoTokenizer
 from accelerate import Accelerator
 
 
@@ -26,7 +26,7 @@ class StateDataloader:
                  ) -> None:
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name)
+
         self.text_column = text_column
         self.target_column = target_column
         self.train_file = train_file
@@ -55,7 +55,7 @@ class StateDataloader:
             eval_dataset = self.load_data('val', self.val_file)
             if self.max_eval_samples is not None:
                 eval_dataset = eval_dataset.select(range(self.max_eval_samples))
-            dataloaders['eval'] = self.get_dataloader(eval_dataset)
+            dataloaders['eval'] = self.get_dataloader(eval_dataset,  shuffle_flag=True)
 
         if self.test_file is not None:
             print('\nLoading test datasets' + '.' * 10)
@@ -140,21 +140,6 @@ class StateDataloader:
         generator = torch.Generator()
         generator.manual_seed(self.seed)
         sampler = RandomSampler(data_source=dataset,generator=generator) if shuffle_flag else SequentialSampler(dataset)
-        if not shuffle_flag:
-            data_collator = DataCollatorForSeq2Seq(
-                tokenizer = self.tokenizer,
-                model = self.model,
-                label_pad_token_id=-100,
-                pad_to_multiple_of=8
-            )
-            dataset = dataset.remove_columns(['prompt', 'output'])
-            dataloader = DataLoader(dataset,
-                                    sampler=sampler,
-                                    collate_fn=data_collator,
-                                    batch_size=self.batch_size
-                                    )
-            return dataloader
-
         dataloader = DataLoader(dataset,
                                 sampler= sampler,
                                 collate_fn=self.dynamic_collate,
