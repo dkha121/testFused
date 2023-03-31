@@ -318,7 +318,7 @@ class Trainer:
                     if self.with_tracking:
                         loss_detached = loss.detach().float()
                         total_loss += loss_detached
-                        accelerator.log({"training_loss_batch": float(loss_detached)}, step=step)
+                        accelerator.log({"training_loss_batch": float(loss_detached)}, step=completed_steps)
 
                 # Checks if the accelerator has performed an optimization step behind the scenes
                 if accelerator.sync_gradients:

@@ -11,7 +11,7 @@ class Evaluation:
     def __init__(self,
                  metric,
                  eval_dataloaders: DataLoader,
-                 pad_to_max_length: bool = False,
+                 pad_to_max_length: bool = True,
                  ignore_pad_token_for_loss: bool = True,
                  with_tracking: bool = False,
                  num_beams: Optional[int] = 4,
@@ -30,7 +30,8 @@ class Evaluation:
     def eval(self,accelerator,tokenizer,model):
         model.eval()
         gen_kwargs = {
-            "num_beams": self.num_beams
+            "max_length": self.max_target_length,
+            "num_beams": self.num_beams,
         }
         total_loss_eval = 0
         samples_seen = 0
