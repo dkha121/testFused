@@ -54,9 +54,8 @@ class Evaluation:
                     labels = accelerator.pad_across_processes(batch["labels"], dim=1,
                                                               pad_index=tokenizer.pad_token_id)
 
-                generated_tokens, labels = accelerator.gather_for_metrics((generated_tokens, labels))
-                generated_tokens = generated_tokens.cpu().numpy()
-                labels = labels.cpu().numpy()
+                generated_tokens = accelerator.gather(generated_tokens).cpu().numpy()
+                labels = accelerator.gather(labels).cpu().numpy()
 
                 if self.ignore_pad_token_for_loss:
                     # Replace -100 in the labels as we can't decode them.

@@ -55,7 +55,7 @@ class StateDataloader:
             eval_dataset = self.load_data('val', self.val_file)
             if self.max_eval_samples is not None:
                 eval_dataset = eval_dataset.select(range(self.max_eval_samples))
-            dataloaders['eval'] = self.get_dataloader(eval_dataset,  shuffle_flag=True)
+            dataloaders['eval'] = self.get_dataloader(eval_dataset)
 
         if self.test_file is not None:
             print('\nLoading test datasets' + '.' * 10)
