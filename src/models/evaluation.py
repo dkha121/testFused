@@ -83,17 +83,17 @@ class Evaluation:
                 del decoded_labels
                 print("METRIC_ADD_BATCH: " + str(accelerator.process_index))
                 # Compute and log the loss
-                # outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
-                #                 labels=batch["labels"])
-                # loss = outputs.loss
-                # print("METRIC_COMPUTE_LOSS: " + str(accelerator.process_index) + str(float(loss.detach().float())))
-                # if self.with_tracking:
-                #     total_loss_eval += loss.detach().float()
+                outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
+                                labels=batch["labels"])
+                loss = outputs.loss
+                print("METRIC_COMPUTE_LOSS: " + str(accelerator.process_index) + str(float(loss.detach().float())))
+                if self.with_tracking:
+                    total_loss_eval += loss.detach().float()
         accelerator.wait_for_everyone()
-        result = self.metric.compute(use_stemmer=True)
+        # result = self.metric.compute(use_stemmer=True)
         print("METRIC_PRECOMPUTE_BATCH: " + str(accelerator.process_index)+str(result))
-        if accelerator.is_main_process:
-            result = {k: round(v * 100, 4) for k, v in result.items()}
+        #if accelerator.is_main_process:
+            #result = {k: round(v * 100, 4) for k, v in result.items()}
         print("METRIC_COMPUTE_BATCH: " + str(accelerator.process_index)+str(result))
         accelerator.wait_for_everyone()
         if self.with_tracking:
