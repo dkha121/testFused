@@ -10,7 +10,6 @@ from typing import Set, Optional, Union
 from typing_extensions import Literal
 from torch.utils.data.dataloader import DataLoader
 from tqdm.auto import tqdm
-import torch.distributed as dist
 
 # Transformers
 import transformers
@@ -244,7 +243,7 @@ class Trainer:
                     name = name + str(i)
                     i+=1
         # Metric
-        metric = evaluate.load("rouge",num_process=dist.get_world_size(),process_id=dist.get_rank())
+        metric = evaluate.load("rouge",num_process=accelerator.num_processes,process_id=accelerator.process_index)
         evaluator = Evaluation(eval_dataloaders = dataloaders['eval'],
                                pad_to_max_length = self.pad_to_max_length,
                                ignore_pad_token_for_loss = self.ignore_pad_token_for_loss,

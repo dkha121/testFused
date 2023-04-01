@@ -94,7 +94,8 @@ class Evaluation:
                 print("METRIC_COMPUTE_LOSS: " + str(accelerator.process_index) + str(float(loss.detach().float())))
                 if self.with_tracking:
                     total_loss_eval += loss.detach().float()
-        result = self.metric.compute(use_stemmer=True)
+        if accelerator.is_main_process:
+            result = self.metric.compute(use_stemmer=True)
         result = {k: round(v * 100, 4) for k, v in result.items()}
         print("METRIC_COMPUTE_BATCH: " + str(accelerator.process_index)+str(result))
         accelerator.wait_for_everyone()
