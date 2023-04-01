@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import evaluate
 import nltk
-nltk.download('punkt')
+nltk.download('punkt',quiet=True)
 from typing import Optional
 from torch.utils.data.dataloader import DataLoader
 from accelerate.utils import DistributedType
@@ -57,8 +57,9 @@ class Evaluation:
                                                           pad_index=tokenizer.pad_token_id)
 
                 print("PROCESS_labels_tokens: " + str(accelerator.process_index) + str(labels.shape))
-                generated_tokens = accelerator.gather(generated_tokens).cpu().numpy()
-                labels = accelerator.gather(labels).cpu().numpy()
+                generated_tokens, labels = accelerator.gather_for_metrics((generated_tokens, labels))
+                generated_tokens = generated_tokens.cpu().numpy()
+                labels = labels.cpu().numpy()
                 print(str(generated_tokens) + str(accelerator.process_index))
                 print(str(labels) + str(accelerator.process_index))
                 if self.ignore_pad_token_for_loss:
@@ -73,29 +74,23 @@ class Evaluation:
                 decoded_preds, decoded_labels = self.postprocess_text(decoded_preds, decoded_labels)
                 print("DECODED_PROCESS_TEXT: " + str(accelerator.process_index) +str(decoded_preds))
                 print("DECODED_PROCESS_TEXT: " + str(accelerator.process_index) +str(decoded_labels))
-                # If we are in a multiprocess environment, the last batch has duplicates
-                if accelerator.num_processes > 1:
-                    if step == len(self.eval_dataloaders) - 1:
-                        decoded_preds = decoded_preds[: len(self.eval_dataloaders.dataset) - samples_seen]
-                        decoded_labels = decoded_labels[: len(self.eval_dataloaders.dataset) - samples_seen]
-                    else:
-                        samples_seen += len(decoded_labels)
 
                 self.metric.add_batch(
                     predictions=decoded_preds,
                     references=decoded_labels,
                 )
-
+                del decoded_preds
+                del decoded_labels
                 print("METRIC_ADD_BATCH: " + str(accelerator.process_index))
                 # Compute and log the loss
-                outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
-                                labels=batch["labels"])
-                loss = outputs.loss
-                print("METRIC_COMPUTE_LOSS: " + str(accelerator.process_index) + str(float(loss.detach().float())))
-                if self.with_tracking:
-                    total_loss_eval += loss.detach().float()
+                # outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
+                #                 labels=batch["labels"])
+                # loss = outputs.loss
+                # print("METRIC_COMPUTE_LOSS: " + str(accelerator.process_index) + str(float(loss.detach().float())))
+                # if self.with_tracking:
+                #     total_loss_eval += loss.detach().float()
         accelerator.wait_for_everyone()
-        result = self.metric.compute()
+        result = self.metric.compute(use_stemmer=True)
         print("METRIC_PRECOMPUTE_BATCH: " + str(accelerator.process_index)+str(result))
         if accelerator.is_main_process:
             result = {k: round(v * 100, 4) for k, v in result.items()}
