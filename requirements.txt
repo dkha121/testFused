@@ -10,6 +10,6 @@ torch==1.12.0+cu113
 tqdm~=4.64.1
 transformers>=4.27.0
 typing_extensions>=4.1.0
-evaluate>=0.3.0
 pyarrow>=7.0.0
 rouge_score>=0.1
+evaluate>=0.3.0
