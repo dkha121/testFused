@@ -38,6 +38,7 @@ class Evaluation:
         for step, batch in enumerate(self.eval_dataloaders):
             if samples_seen == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
+            batch.to(accelerator.device)
             with torch.no_grad():
                 print("GENERATING_generated_tokens: "+str(accelerator.process_index))
                 generated_tokens = accelerator.unwrap_model(model).generate(
