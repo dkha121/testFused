@@ -39,6 +39,7 @@ class Evaluation:
             if samples_seen == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
             with torch.no_grad():
+                print("GENERATING_generated_tokens: "+str(accelerator.process_index))
                 generated_tokens = accelerator.unwrap_model(model).generate(
                     batch["input_ids"],
                     attention_mask=batch["attention_mask"],
@@ -89,13 +90,11 @@ class Evaluation:
                 print("METRIC_COMPUTE_LOSS: " + str(accelerator.process_index) + str(float(loss.detach().float())))
                 if self.with_tracking:
                     total_loss_eval += loss.detach().float()
-        accelerator.wait_for_everyone()
-        # result = self.metric.compute(use_stemmer=True)
+        result = self.metric.compute(use_stemmer=True)
         print("METRIC_PRECOMPUTE_BATCH: " + str(accelerator.process_index)+str(result))
-        #if accelerator.is_main_process:
-            #result = {k: round(v * 100, 4) for k, v in result.items()}
+        if accelerator.is_main_process:
+            result = {k: round(v * 100, 4) for k, v in result.items()}
         print("METRIC_COMPUTE_BATCH: " + str(accelerator.process_index)+str(result))
-        accelerator.wait_for_everyone()
         if self.with_tracking:
             return result, total_loss_eval
         return result
