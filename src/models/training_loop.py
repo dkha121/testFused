@@ -340,26 +340,26 @@ class Trainer:
                     result = evaluator.eval(accelerator = accelerator,
                                             tokenizer = tokenizer, model = model)
 
-                logger.info(result)
-                if self.with_tracking:
-                    if accelerator.is_main_process:
-                        result["train_loss"] = total_loss.item() / len(dataloaders['train'])
-                        result["epoch"] = epoch
-                        result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
-                        eval_losses.append(result['eval_loss'])
-                        accelerator.log(result, step=completed_steps)
-                        logger.info(f"*** TRAINING LOSS AT EPOCH {epoch} ***")
-                        logger.info(result["train_loss"])
-                        logger.info(f"*** EVAL LOSS AT EPOCH {epoch} ***")
-                        logger.info(result["eval_loss"])
+                if accelerator.is_main_process:
+                    logger.info(result)
+                    if self.with_tracking:
+                            result["train_loss"] = total_loss.item() / len(dataloaders['train'])
+                            result["epoch"] = epoch
+                            result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
+                            eval_losses.append(result['eval_loss'])
+                            accelerator.log(result, step=completed_steps)
+                            logger.info(f"*** TRAINING LOSS AT EPOCH {epoch} ***")
+                            logger.info(result["train_loss"])
+                            logger.info(f"*** EVAL LOSS AT EPOCH {epoch} ***")
+                            logger.info(result["eval_loss"])
 
-                if self.output_dir is not None:
-                    if result["eval_loss"] == min(eval_losses):
-                        logger.info(f"***** Saving best eval loss epoch *****")
-                        logger.info(f"Saving epoch: {epoch}")
-                        self.save(accelerator, model, tokenizer, result)
-                    else:
-                        logger.info(f"***** Discarding epoch {epoch} *****")
+                    if self.output_dir is not None:
+                        if result["eval_loss"] == min(eval_losses):
+                            logger.info(f"***** Saving best eval loss epoch *****")
+                            logger.info(f"Saving epoch: {epoch}")
+                            self.save(accelerator, model, tokenizer, result)
+                        else:
+                            logger.info(f"***** Discarding epoch {epoch} *****")
             else:
                 result = {}
                 if self.with_tracking:
