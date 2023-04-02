@@ -39,6 +39,7 @@ class Evaluation:
             if samples_seen == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
             batch = {k: v.to(device="cuda:0", non_blocking=True) for k, v in batch.items()}
+            model = model.to("cuda:0")
             with torch.no_grad():
                 print("GENERATING_generated_tokens: "+str(accelerator.process_index))
                 generated_tokens = accelerator.unwrap_model(model).generate(
