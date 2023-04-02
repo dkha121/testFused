@@ -333,14 +333,15 @@ class Trainer:
 
             #Eval per epoch
             if self.do_eval_per_epoch:
-                if self.with_tracking:
-                    result, total_loss_eval = evaluator.eval(accelerator = accelerator,
-                                                             tokenizer = tokenizer, model = model)
-                else:
-                    result = evaluator.eval(accelerator = accelerator,
-                                            tokenizer = tokenizer, model = model)
-
                 if accelerator.is_main_process:
+                    if self.with_tracking:
+                        result, total_loss_eval = evaluator.eval(accelerator = accelerator,
+                                                                 tokenizer = tokenizer, model = model)
+                    else:
+                        result = evaluator.eval(accelerator = accelerator,
+                                                tokenizer = tokenizer, model = model)
+
+
                     logger.info(result)
                     if self.with_tracking:
                             result["train_loss"] = total_loss.item() / len(dataloaders['train'])
