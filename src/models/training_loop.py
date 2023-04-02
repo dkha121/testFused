@@ -195,8 +195,8 @@ class Trainer:
             num_training_steps=self.max_train_steps * self.gradient_accumulation_steps,
         )
 
-        optimizer, dataloaders['train'], dataloaders['eval'], lr_scheduler = accelerator.prepare(
-            optimizer, dataloaders['train'], dataloaders['eval'], lr_scheduler
+        optimizer, dataloaders['train'], lr_scheduler = accelerator.prepare(
+            optimizer, dataloaders['train'], lr_scheduler
         )
 
         accelerator.register_for_checkpointing(lr_scheduler)
