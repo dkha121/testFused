@@ -339,6 +339,7 @@ class Trainer:
                 else:
                     result = evaluator.eval(accelerator = accelerator,
                                             tokenizer = tokenizer, model = model)
+                eval_loss = -1
                 if accelerator.is_main_process:
                     logger.info(result)
                     if self.with_tracking:
