@@ -360,7 +360,7 @@ class Trainer:
                         if result["eval_loss"] == min(eval_losses):
                             logger.info(f"***** Saving best eval loss epoch *****")
                             logger.info(f"Saving epoch: {epoch}")
-                            #self.save(accelerator, model, tokenizer, result)
+                            self.save(accelerator, model, tokenizer, result)
                         else:
                             logger.info(f"***** Discarding epoch {epoch} *****")
                 print("END_EVAL: " + str(accelerator.process_index))
