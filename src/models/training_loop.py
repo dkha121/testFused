@@ -361,6 +361,7 @@ class Trainer:
                             self.save(accelerator, model, tokenizer, result)
                         else:
                             logger.info(f"***** Discarding epoch {epoch} *****")
+                print("END_EVAL: " + str(accelerator.process_index))
             else:
                 result = {}
                 if self.with_tracking:
@@ -372,6 +373,7 @@ class Trainer:
 
             if self.checkpointing_steps == "epoch":
                 self.save_cpkt(accelerator,checkpointing_steps=self.checkpointing_steps,epoch=epoch)
+            print("END_EPOCH: " + str(accelerator.process_index))
 
         if self.with_tracking:
             accelerator.end_training()
