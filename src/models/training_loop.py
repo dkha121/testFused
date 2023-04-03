@@ -57,7 +57,7 @@ class Trainer:
                  mixed_precision: Literal = ['no','fp16','bf16'],
                  seed: Optional[int] = None,
                  model_type: Optional[str] = None,
-                 checkpointing_steps: Optional[Union[str,int]] = "epoch",
+                 checkpointing_steps: Optional[Union[str,int]] = None,
                  resume_from_checkpoint: Optional[Union[str,bool]] = False,
                  with_tracking: bool = False,
                  report_to: Optional[str] = None,
