@@ -38,10 +38,7 @@ class Evaluation:
         for step, batch in enumerate(self.eval_dataloaders):
             if samples_seen == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
-            #batch = {k: v.to(device="cuda:0", non_blocking=True) for k, v in batch.items()}
-            #model = model.to("cuda:0")
             with torch.no_grad():
-                print("GENERATING_generated_tokens: "+str(accelerator.process_index))
                 generated_tokens = accelerator.unwrap_model(model).generate(
                     batch["input_ids"],
                     attention_mask=batch["attention_mask"],
@@ -52,19 +49,14 @@ class Evaluation:
                     generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
                 )
 
-                print("PROCESS_generated_tokens: "+str(accelerator.process_index)+str(generated_tokens.shape))
-                labels = batch["labels"]
-
                 # If we did not pad to max length, we need to pad the labels too
                 labels = accelerator.pad_across_processes(batch["labels"], dim=1,
                                                           pad_index=tokenizer.pad_token_id)
 
-                print("PROCESS_labels_tokens: " + str(accelerator.process_index) + str(labels.shape))
                 generated_tokens, labels = accelerator.gather_for_metrics((generated_tokens, labels))
                 generated_tokens = generated_tokens.cpu().numpy()
                 labels = labels.cpu().numpy()
-                print(str(generated_tokens) + str(accelerator.process_index))
-                print(str(labels) + str(accelerator.process_index))
+
                 if self.ignore_pad_token_for_loss:
                     # Replace -100 in the labels as we can't decode them.
                     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
@@ -72,11 +64,7 @@ class Evaluation:
                     generated_tokens = generated_tokens[0]
                 decoded_preds = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
                 decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
-                print("DECODED_PREDICT: " + str(accelerator.process_index) +str(decoded_preds))
-                print("DECODED_PREDICT: " + str(accelerator.process_index) +str(decoded_labels))
                 decoded_preds, decoded_labels = self.postprocess_text(decoded_preds, decoded_labels)
-                print("DECODED_PROCESS_TEXT: " + str(accelerator.process_index) +str(decoded_preds))
-                print("DECODED_PROCESS_TEXT: " + str(accelerator.process_index) +str(decoded_labels))
 
                 self.metric.add_batch(
                     predictions=decoded_preds,
@@ -84,19 +72,16 @@ class Evaluation:
                 )
                 del decoded_preds
                 del decoded_labels
-                print("METRIC_ADD_BATCH: " + str(accelerator.process_index))
+
                 # Compute and log the loss
                 outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
                                 labels=batch["labels"])
                 loss = outputs.loss
-                print("METRIC_COMPUTE_LOSS: " + str(accelerator.process_index) + str(float(loss.detach().float())))
                 if self.with_tracking:
                     total_loss_eval += loss.detach().float()
         result = self.metric.compute(use_stemmer=True)
-        print("METRIC_PRECOMPUTE_BATCH: " + str(accelerator.process_index)+str(result))
         if accelerator.is_main_process:
             result = {k: round(v * 100, 4) for k, v in result.items()}
-        print("METRIC_COMPUTE_BATCH: " + str(accelerator.process_index)+str(result))
         if self.with_tracking:
             return result, total_loss_eval
         return result
