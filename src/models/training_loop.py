@@ -341,7 +341,6 @@ class Trainer:
                         result = evaluator.eval(accelerator = accelerator,
                                                 tokenizer = tokenizer, model = model)
 
-
                     logger.info(result)
                     if self.with_tracking:
                             result["train_loss"] = total_loss.item() / len(dataloaders['train'])
@@ -361,6 +360,7 @@ class Trainer:
                             self.save(accelerator, model, tokenizer, result)
                         else:
                             logger.info(f"***** Discarding epoch {epoch} *****")
+                accelerator.wait_for_everyone()
             else:
                 result = {}
                 if self.with_tracking:

@@ -143,7 +143,8 @@ class StateDataloader:
         dataloader = DataLoader(dataset,
                                 sampler= sampler,
                                 collate_fn=self.dynamic_collate,
-                                batch_size=self.batch_size
+                                batch_size=self.batch_size,
+                                drop_last=True
                                 )
 
         return dataloader
