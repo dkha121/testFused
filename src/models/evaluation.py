@@ -26,7 +26,6 @@ class Evaluation:
         self.num_beams = num_beams
         self.max_target_length = max_target_length
 
-
     def eval(self,accelerator,tokenizer,model):
         model.eval()
         gen_kwargs = {
@@ -38,8 +37,8 @@ class Evaluation:
         for step, batch in enumerate(self.eval_dataloaders):
             if samples_seen == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
-            batch = {k: v.to(device="cuda:0", non_blocking=True) for k, v in batch.items()}
-            model = model.to("cuda:0")
+            #batch = {k: v.to(device="cuda:0", non_blocking=True) for k, v in batch.items()}
+            #model = model.to("cuda:0")
             with torch.no_grad():
                 print("GENERATING_generated_tokens: "+str(accelerator.process_index))
                 generated_tokens = accelerator.unwrap_model(model).generate(

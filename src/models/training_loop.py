@@ -195,8 +195,8 @@ class Trainer:
             num_training_steps=self.max_train_steps * self.gradient_accumulation_steps,
         )
 
-        optimizer, dataloaders['train'], lr_scheduler = accelerator.prepare(
-            optimizer, dataloaders['train'], lr_scheduler
+        optimizer, dataloaders['train'], dataloaders['eval'], lr_scheduler = accelerator.prepare(
+            optimizer, dataloaders['train'], dataloaders['eval'], lr_scheduler
         )
 
         accelerator.register_for_checkpointing(lr_scheduler)
@@ -333,34 +333,32 @@ class Trainer:
 
             #Eval per epoch
             if self.do_eval_per_epoch:
-                if accelerator.is_main_process:
-                    if self.with_tracking:
-                        result, total_loss_eval = evaluator.eval(accelerator = accelerator,
-                                                                 tokenizer = tokenizer, model = model)
+                if self.with_tracking:
+                    result, total_loss_eval = evaluator.eval(accelerator = accelerator,
+                                                             tokenizer = tokenizer, model = model)
+                else:
+                    result = evaluator.eval(accelerator = accelerator,
+                                            tokenizer = tokenizer, model = model)
+
+                logger.info(result)
+                if self.with_tracking:
+                        result["train_loss"] = total_loss.item() / len(dataloaders['train'])
+                        result["epoch"] = epoch
+                        result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
+                        eval_losses.append(result['eval_loss'])
+                        accelerator.log(result, step=completed_steps)
+                        logger.info(f"*** TRAINING LOSS AT EPOCH {epoch} ***")
+                        logger.info(result["train_loss"])
+                        logger.info(f"*** EVAL LOSS AT EPOCH {epoch} ***")
+                        logger.info(result["eval_loss"])
+
+                if self.output_dir is not None:
+                    if result["eval_loss"] == min(eval_losses):
+                        logger.info(f"***** Saving best eval loss epoch *****")
+                        logger.info(f"Saving epoch: {epoch}")
+                        self.save(accelerator, model, tokenizer, result)
                     else:
-                        result = evaluator.eval(accelerator = accelerator,
-                                                tokenizer = tokenizer, model = model)
-
-                    logger.info(result)
-                    if self.with_tracking:
-                            result["train_loss"] = total_loss.item() / len(dataloaders['train'])
-                            result["epoch"] = epoch
-                            result["eval_loss"] = total_loss_eval.item() / len(dataloaders['eval'])
-                            eval_losses.append(result['eval_loss'])
-                            accelerator.log(result, step=completed_steps)
-                            logger.info(f"*** TRAINING LOSS AT EPOCH {epoch} ***")
-                            logger.info(result["train_loss"])
-                            logger.info(f"*** EVAL LOSS AT EPOCH {epoch} ***")
-                            logger.info(result["eval_loss"])
-
-                    if self.output_dir is not None:
-                        if result["eval_loss"] == min(eval_losses):
-                            logger.info(f"***** Saving best eval loss epoch *****")
-                            logger.info(f"Saving epoch: {epoch}")
-                            self.save(accelerator, model, tokenizer, result)
-                        else:
-                            logger.info(f"***** Discarding epoch {epoch} *****")
-                accelerator.wait_for_everyone()
+                        logger.info(f"***** Discarding epoch {epoch} *****")
             else:
                 result = {}
                 if self.with_tracking:
