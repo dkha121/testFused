@@ -357,7 +357,7 @@ class Trainer:
 
                 if self.output_dir is not None:
                     print("METRIC_SAVING_BEST: " + str(accelerator.process_index))
-                    if result["eval_loss"] == min(eval_losses):
+                    if result is not None and result["eval_loss"] == min(eval_losses):
                         logger.info(f"***** Saving best eval loss epoch *****")
                         logger.info(f"Saving epoch: {epoch}")
                         self.save(accelerator, model, tokenizer, result)
