@@ -353,11 +353,11 @@ class Trainer:
                         logger.info(result["train_loss"])
                         logger.info(f"*** EVAL LOSS AT EPOCH {epoch} ***")
                         logger.info(result["eval_loss"])
+                        operations.send_to_device(result['eval_loss'], accelerator.device, non_blocking=True)
+                        operations.send_to_device(eval_losses, accelerator.device, non_blocking=True)
 
                 if self.output_dir is not None:
                     accelerator.wait_for_everyone()
-                    operations.send_to_device(result['eval_loss'],accelerator.device,non_blocking=True)
-                    operations.send_to_device(eval_losses,accelerator.device,non_blocking=True)
                     if result['eval_loss'] == min(eval_losses):
                         logger.info(f"***** Saving best eval loss epoch *****")
                         logger.info(f"Saving epoch: {epoch}")
