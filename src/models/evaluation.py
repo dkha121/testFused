@@ -43,13 +43,13 @@ class Evaluation:
                     batch["input_ids"],
                     attention_mask=batch["attention_mask"],
                     **gen_kwargs,
+                    synced_gpus=True
                 )
 
                 generated_tokens = accelerator.pad_across_processes(
                     generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
                 )
 
-                # If we did not pad to max length, we need to pad the labels too
                 labels = accelerator.pad_across_processes(batch["labels"], dim=1,
                                                           pad_index=tokenizer.pad_token_id)
 
@@ -73,11 +73,11 @@ class Evaluation:
                 del decoded_preds
                 del decoded_labels
 
-                # Compute and log the loss
-                outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
-                                labels=batch["labels"])
-                loss = outputs.loss
                 if self.with_tracking:
+                    # Compute and log the loss
+                    outputs = model(batch["input_ids"], attention_mask=batch["attention_mask"],
+                                    labels=batch["labels"])
+                    loss = outputs.loss
                     total_loss_eval += loss.detach().float()
         result = self.metric.compute(use_stemmer=True)
         if accelerator.is_main_process:

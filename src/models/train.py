@@ -18,9 +18,9 @@ def parse_args(args):
                         help="The name of the column in the datasets containing the full texts .")
     parser.add_argument('--target_column', type=str, default='output',
                         help="The name of the column in the label containing the full texts .")
-    parser.add_argument('--val_files', nargs='+',default = None,
+    parser.add_argument('--val_files', nargs='+',required=True,
                         help= "Directory to validation file (can be multiple files)")
-    parser.add_argument('--test_files', nargs='+', default = None,
+    parser.add_argument('--test_files', nargs='+',
                         help= "Directory to test file (can be multiple files)")
     parser.add_argument('--batch_size', type=int, default=2, help="Batch size for the dataloader")
     parser.add_argument('--max_train_samples', type=int, default=None, help="Number of training samples")
@@ -28,7 +28,7 @@ def parse_args(args):
     parser.add_argument('--seed', type=int, default=42, help="A seed for reproducible training.")
 
     # Training
-    parser.add_argument('--model_name', type=str, default="lucadiliello/bart-small",
+    parser.add_argument('--model_name', type=str, default="prakharz/DIAL-BART0",
                         help ="Model name for fine-tuning")
     parser.add_argument('--num_train_epochs', type=int, default=10,
                         help="number training epochs")
