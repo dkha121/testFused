@@ -28,6 +28,9 @@ from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import set_seed  # reproducability across devices
 from accelerate.utils import operations
+from accelerate.utils import DistributedType
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP, StateDictType, FullStateDictConfig
+
 
 logger = get_logger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_MAPPING.keys())
@@ -341,6 +344,7 @@ class Trainer:
                     result = evaluator.eval(accelerator = accelerator,
                                             tokenizer = tokenizer, model = model)
 
+                accelerator.wait_for_everyone()
                 if accelerator.is_main_process:
                     logger.info(result)
                     if self.with_tracking:
@@ -383,9 +387,15 @@ class Trainer:
 
     def save(self,accelerator,model,tokenizer,result):
         unwrapped_model = accelerator.unwrap_model(model)
+        if accelerator.distributed_type == DistributedType.FSDP:
+            full_state_dict_config = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+            with FSDP.state_dict_type(unwrapped_model, StateDictType.FULL_STATE_DICT, full_state_dict_config):
+                state = accelerator.get_state_dict(unwrapped_model)
+        else:
+            state = accelerator.get_state_dict(model)
         unwrapped_model.save_pretrained(
             self.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save,
-            state_dict=accelerator.get_state_dict(model)
+            state_dict=state
         )
         if accelerator.is_main_process:
             tokenizer.save_pretrained(self.output_dir)

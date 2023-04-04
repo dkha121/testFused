@@ -32,6 +32,7 @@ class Evaluation:
         gen_kwargs = {
             "max_length": self.max_target_length,
             "num_beams": self.num_beams,
+            "synced_gpus": True if accelerator.distributed_type != DistributedType.NO else False
         }
         total_loss_eval = 0
         for step, batch in enumerate(self.eval_dataloaders):
@@ -39,11 +40,11 @@ class Evaluation:
             if total_loss_eval == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
             with torch.no_grad():
+                # synced_gpus was necessary else resulted into indefinite hang
                 generated_tokens = accelerator.unwrap_model(model).generate(
                     batch["input_ids"],
                     attention_mask=batch["attention_mask"],
-                    **gen_kwargs,
-                    synced_gpus=True
+                    **gen_kwargs
                 )
 
                 generated_tokens = accelerator.pad_across_processes(
