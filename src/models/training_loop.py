@@ -344,7 +344,6 @@ class Trainer:
                     result = evaluator.eval(accelerator = accelerator,
                                             tokenizer = tokenizer, model = model)
 
-                accelerator.wait_for_everyone()
                 if accelerator.is_main_process:
                     logger.info(result)
                     if self.with_tracking:
@@ -375,11 +374,11 @@ class Trainer:
                     logger.info(f"*** TRAINING LOSS AT EPOCH {epoch} ***")
                     logger.info(result["train_loss"])
 
+            print("START CPKT: "+str(accelerator.process_index))
             if self.checkpointing_steps == "epoch":
-                accelerator.wait_for_everyone()
                 self.save_cpkt(accelerator,checkpointing_steps=self.checkpointing_steps,epoch=epoch)
             accelerator.wait_for_everyone()
-            print("ENDDING EPOCH: "+str(accelerator.process_index))
+            print("ENDING EPOCH: "+str(accelerator.process_index))
 
         if self.with_tracking:
             accelerator.end_training()
@@ -387,7 +386,7 @@ class Trainer:
         if self.output_dir is not None and not self.do_eval_per_epoch:
             self.save(accelerator, model, tokenizer, result)
 
-    def save(self,accelerator,model,tokenizer,result):
+    def save(self, accelerator, model, tokenizer, result):
         unwrapped_model = accelerator.unwrap_model(model)
         if accelerator.distributed_type == DistributedType.FSDP:
             full_state_dict_config = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
