@@ -34,9 +34,9 @@ class Evaluation:
             "num_beams": self.num_beams,
         }
         total_loss_eval = 0
-        samples_seen = 0
         for step, batch in enumerate(self.eval_dataloaders):
-            if samples_seen == 0 and accelerator.distributed_type == DistributedType.FSDP:
+            # Pass dummy batch to avoid caffe error
+            if total_loss_eval == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
             with torch.no_grad():
                 generated_tokens = accelerator.unwrap_model(model).generate(
