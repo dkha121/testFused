@@ -157,6 +157,7 @@ class Trainer:
                     self.model_name_or_path,
                     from_tf=bool(".ckpt" in self.model_name_or_path),
                     config=config,
+                    return_dict=True
                 ).to(device)
             else:
                 logger.info("Training new model from scratch")
