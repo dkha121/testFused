@@ -377,6 +377,7 @@ class Trainer:
 
             if self.checkpointing_steps == "epoch":
                 self.save_cpkt(accelerator,checkpointing_steps=self.checkpointing_steps,epoch=epoch)
+            accelerator.wait_for_everyone()
 
         if self.with_tracking:
             accelerator.end_training()
@@ -405,6 +406,7 @@ class Trainer:
 
 
     def save_cpkt(self,accelerator,checkpointing_steps, epoch=None, completed_steps=None):
+        accelerator.wait_for_everyone()
         if checkpointing_steps == "epoch":
             logger.info(f"***** Saving checkpoint at epoch {epoch} *****")
             output_dir = f"epoch_{epoch}"
