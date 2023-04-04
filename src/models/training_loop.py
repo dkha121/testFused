@@ -376,15 +376,16 @@ class Trainer:
                     logger.info(result["train_loss"])
 
             if self.checkpointing_steps == "epoch":
+                accelerator.wait_for_everyone()
                 self.save_cpkt(accelerator,checkpointing_steps=self.checkpointing_steps,epoch=epoch)
             accelerator.wait_for_everyone()
+            print("ENDDING EPOCH: "+str(accelerator.process_index))
 
         if self.with_tracking:
             accelerator.end_training()
 
         if self.output_dir is not None and not self.do_eval_per_epoch:
-            self.save(accelerator,model,tokenizer,result)
-
+            self.save(accelerator, model, tokenizer, result)
 
     def save(self,accelerator,model,tokenizer,result):
         unwrapped_model = accelerator.unwrap_model(model)
@@ -404,8 +405,7 @@ class Trainer:
             with open(os.path.join(self.output_dir, "all_results.json"), "w") as f:
                 json.dump(all_results, f)
 
-
-    def save_cpkt(self,accelerator,checkpointing_steps, epoch=None, completed_steps=None):
+    def save_cpkt(self, accelerator, checkpointing_steps, epoch=None, completed_steps=None):
         accelerator.wait_for_everyone()
         if checkpointing_steps == "epoch":
             logger.info(f"***** Saving checkpoint at epoch {epoch} *****")
