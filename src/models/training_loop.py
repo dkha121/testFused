@@ -405,7 +405,6 @@ class Trainer:
                 json.dump(all_results, f)
 
     def save_cpkt(self, accelerator, checkpointing_steps, epoch=None, completed_steps=None):
-        accelerator.wait_for_everyone()
         if checkpointing_steps == "epoch":
             logger.info(f"***** Saving checkpoint at epoch {epoch} *****")
             output_dir = f"epoch_{epoch}"
