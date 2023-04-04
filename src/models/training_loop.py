@@ -27,6 +27,7 @@ from evaluation import Evaluation
 from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import set_seed  # reproducability across devices
+from accelerate.utils import operations
 
 logger = get_logger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_MAPPING.keys())
@@ -353,13 +354,16 @@ class Trainer:
                         logger.info(f"*** EVAL LOSS AT EPOCH {epoch} ***")
                         logger.info(result["eval_loss"])
 
-                    if self.output_dir is not None:
-                        if result['eval_loss'] == min(eval_losses):
-                            logger.info(f"***** Saving best eval loss epoch *****")
-                            logger.info(f"Saving epoch: {epoch}")
-                            self.save(accelerator, model, tokenizer, result)
-                        else:
-                            logger.info(f"***** Discarding epoch {epoch} *****")
+                if self.output_dir is not None:
+                    accelerator.wait_for_everyone()
+                    operations.send_to_device(result['eval_loss'],accelerator.device,non_blocking=True)
+                    operations.send_to_device(eval_losses,accelerator.device,non_blocking=True)
+                    if result['eval_loss'] == min(eval_losses):
+                        logger.info(f"***** Saving best eval loss epoch *****")
+                        logger.info(f"Saving epoch: {epoch}")
+                        self.save(accelerator, model, tokenizer, result)
+                    else:
+                        logger.info(f"***** Discarding epoch {epoch} *****")
 
             else:
                 result = {}
