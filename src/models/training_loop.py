@@ -132,9 +132,9 @@ class Trainer:
             transformers.utils.logging.set_verbosity_error()
 
         if self.config_name:
-            config = AutoConfig.from_pretrained(self.config_name)
+            config = AutoConfig.from_pretrained(self.config_name, return_dict=True)
         elif self.model_name_or_path:
-            config = AutoConfig.from_pretrained(self.model_name_or_path)
+            config = AutoConfig.from_pretrained(self.model_name_or_path, return_dict=True)
         else:
             config = CONFIG_MAPPING[self.model_type]()
             logger.warning("You are instantiating a new config instance from scratch.")
@@ -156,8 +156,7 @@ class Trainer:
                 self.model = AutoModelForSeq2SeqLM.from_pretrained(
                     self.model_name_or_path,
                     from_tf=bool(".ckpt" in self.model_name_or_path),
-                    config=config,
-                    return_dict=True
+                    config=config
                 ).to(device)
             else:
                 logger.info("Training new model from scratch")
