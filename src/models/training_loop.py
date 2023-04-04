@@ -374,10 +374,10 @@ class Trainer:
                     logger.info(f"*** TRAINING LOSS AT EPOCH {epoch} ***")
                     logger.info(result["train_loss"])
 
+            accelerator.wait_for_everyone()
             print("START CPKT: "+str(accelerator.process_index))
             if self.checkpointing_steps == "epoch":
                 self.save_cpkt(accelerator,checkpointing_steps=self.checkpointing_steps,epoch=epoch)
-            accelerator.wait_for_everyone()
             print("ENDING EPOCH: "+str(accelerator.process_index))
 
         if self.with_tracking:
