@@ -45,7 +45,7 @@ class Evaluation:
     @timeit
     def eval(self, accelerator, tokenizer, model):
         accelerator.wait_for_everyone()
-        accelerator.print("**** starting evaluation ****")
+        accelerator.print("\n**** Starting evaluation ****\n")
         model.eval()
         gen_kwargs = {
             "max_length": self.max_target_length,
