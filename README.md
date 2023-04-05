@@ -118,7 +118,7 @@ num_processes: 2    # The number of GPUs on the system
 use_cpu: false
 ```
 
-**Training with Fully shared data parallel enabled**
+**Training with Fully sharded data parallel enabled**
 ```commandline
 compute_environment: LOCAL_MACHINE
 deepspeed_config: {}
