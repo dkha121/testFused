@@ -224,7 +224,6 @@ class Trainer:
         # Afterwards we recalculate our number of training epochs
         self.num_train_epochs = math.ceil(self.max_train_steps / self.num_update_steps_per_epoch)
 
-
         # We need to initialize the trackers we use, and also store our configuration.
         # The trackers initializes automatically on the main process.
         if self.with_tracking:

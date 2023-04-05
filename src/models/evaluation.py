@@ -54,7 +54,9 @@ class Evaluation:
         }
 
         total_loss_eval = 0
-        for step, batch in enumerate(tqdm(self.eval_dataloaders, disable=not accelerator.is_local_main_process, colour="blue")):
+        for step, batch in enumerate(tqdm(self.eval_dataloaders,
+                                          desc="Eval on process: "+str(accelerator.process_index),
+                                          colour="blue", position=accelerator.num_processes - 1)):
             # Pass dummy batch to avoid caffe error
             if step == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
@@ -107,7 +109,6 @@ class Evaluation:
         if self.with_tracking:
             return result, total_loss_eval
         return result
-
 
     def postprocess_text(self, preds, labels):
         preds = [pred.strip() for pred in preds]
