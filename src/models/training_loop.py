@@ -5,6 +5,8 @@ import math
 import os
 import numpy as np
 import torch
+import time
+from functools import wraps
 from pathlib import Path
 from typing import Set, Optional, Union
 from typing_extensions import Literal
@@ -99,7 +101,7 @@ class Trainer:
         self.report_to = report_to
         self.do_eval_per_epoch = do_eval_per_epoch
 
-
+    @timeit
     def train(self):
 
         accelerator_log_kwargs = {}
@@ -419,6 +421,19 @@ class Trainer:
                 if self.output_dir is not None:
                     output_dir = os.path.join(self.output_dir, output_dir)
                 accelerator.save_state(output_dir)
+
+
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
+
+        return result
+    return timeit_wrapper
 
 
 

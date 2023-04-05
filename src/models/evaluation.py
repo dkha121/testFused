@@ -2,7 +2,9 @@ import numpy as np
 import torch
 import evaluate
 import nltk
+import time
 nltk.download('punkt',quiet=True)
+from functools import wraps
 from typing import Optional
 from torch.utils.data.dataloader import DataLoader
 from accelerate.utils import DistributedType
@@ -27,7 +29,10 @@ class Evaluation:
         self.num_beams = num_beams
         self.max_target_length = max_target_length
 
-    def eval(self,accelerator,tokenizer,model):
+    @timeit
+    def eval(self, accelerator, tokenizer, model):
+        accelerator.wait_for_everyone()
+        accelerator.print("** starting evaluation **")
         model.eval()
         gen_kwargs = {
             "max_length": self.max_target_length,
@@ -36,15 +41,15 @@ class Evaluation:
         total_loss_eval = 0
         for step, batch in enumerate(self.eval_dataloaders):
             # Pass dummy batch to avoid caffe error
-            if total_loss_eval == 0 and accelerator.distributed_type == DistributedType.FSDP:
+            if step == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
             with torch.no_grad():
                 # synced_gpus was necessary else resulted into indefinite hang
                 generated_tokens = accelerator.unwrap_model(model).generate(
                     batch["input_ids"],
                     attention_mask=batch["attention_mask"],
-                    **gen_kwargs,
-                    synced_gpus= True if accelerator.distributed_type != DistributedType.NO else False
+                    synced_gpus=True if accelerator.distributed_type != DistributedType.NO else False,
+                    **gen_kwargs
                 )
 
                 generated_tokens = accelerator.pad_across_processes(
@@ -83,6 +88,7 @@ class Evaluation:
         result = self.metric.compute(use_stemmer=True)
         if accelerator.is_main_process:
             result = {k: round(v * 100, 4) for k, v in result.items()}
+        print(f"** Evaluation of process {accelerator.process_index} completed **")
         if self.with_tracking:
             return result, total_loss_eval
         return result
@@ -97,3 +103,16 @@ class Evaluation:
         labels = ["\n".join(nltk.sent_tokenize(label)) for label in labels]
 
         return preds, labels
+
+
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
+
+        return result
+    return timeit_wrapper
