@@ -372,11 +372,22 @@ class Trainer:
                         logger.info(f"*** EVAL LOSS AT EPOCH {epoch} ***")
                         logger.info(result["eval_loss"])
 
-                    if self.output_dir is not None:
+                if self.output_dir is not None and self.with_tracking:
+                    accelerator.wait_for_everyone()
+                    unwrapped_model = accelerator.unwrap_model(model)
+                    if accelerator.distributed_type == DistributedType.FSDP:
+                        full_state_dict_config = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+                        with FSDP.state_dict_type(unwrapped_model, StateDictType.FULL_STATE_DICT,
+                                                  full_state_dict_config):
+                            state = accelerator.get_state_dict(unwrapped_model)
+                    else:
+                        state = accelerator.get_state_dict(model)
+
+                    if accelerator.is_main_process:
                         if result['eval_loss'] == min(eval_losses):
                             logger.info(f"***** Saving best eval loss epoch *****")
                             logger.info(f"Saving epoch: {epoch}")
-                            self.save(accelerator, model, tokenizer, result)
+                            self.save(accelerator, unwrapped_model, tokenizer, result, state)
                         else:
                             logger.info(f"***** Discarding epoch {epoch} *****")
 
@@ -401,14 +412,7 @@ class Trainer:
         if self.output_dir is not None and not self.do_eval_per_epoch:
             self.save(accelerator, model, tokenizer, result)
 
-    def save(self, accelerator, model, tokenizer, result):
-        unwrapped_model = accelerator.unwrap_model(model)
-        if accelerator.distributed_type == DistributedType.FSDP:
-            full_state_dict_config = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-            with FSDP.state_dict_type(unwrapped_model, StateDictType.FULL_STATE_DICT, full_state_dict_config):
-                state = accelerator.get_state_dict(unwrapped_model)
-        else:
-            state = accelerator.get_state_dict(model)
+    def save(self, accelerator, unwrapped_model, tokenizer, result, state):
         unwrapped_model.save_pretrained(
             self.output_dir, is_main_process=accelerator.is_main_process, save_function=accelerator.save,
             state_dict=state
