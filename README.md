@@ -45,28 +45,28 @@ Dataset after converted: https://drive.google.com/drive/folders/1QWqcj9vRSWrW77D
 
 ## Training
 ```commandline
-usage: train.py [-h] [--output_dir OUTPUT_DIR] [--train_files TRAIN_FILES [TRAIN_FILES ...]] [--text_column TEXT_COLUMN] [--target_column TARGET_COLUMN] [--val_files VAL_FILES [VAL_FILES ...]]                                     
-                [--test_files TEST_FILES [TEST_FILES ...]] [--batch_size BATCH_SIZE] [--max_train_samples MAX_TRAIN_SAMPLES] [--max_eval_samples MAX_EVAL_SAMPLES] [--seed SEED] [--model_name MODEL_NAME]                           
-                [--num_train_epochs NUM_TRAIN_EPOCHS] [--max_target_length MAX_TARGET_LENGTH] [--num_beams NUM_BEAMS] [--mixed_precision MIXED_PRECISION] [--with_tracking WITH_TRACKING] [--checkpointing_steps CHECKPOINTING_STEPS]
-                [--resume_from_checkpoint RESUME_FROM_CHECKPOINT] [--do_eval_per_epoch DO_EVAL_PER_EPOCH] [--report_to REPORT_TO] [--learning_rate LEARNING_RATE] [--weight_decay WEIGHT_DECAY]                                      
-                [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS] [--lr_scheduler_type {linear,cosine,cosine_with_restarts,polynomial,constant,constant_with_warmup}]                                                      
-                                                                                                                                                                                                                                     
-options:                                                                                                                                                                                                                             
-  -h, --help            show this help message and exit                                                                                                                                                                              
-  --output_dir OUTPUT_DIR                                                                                                                                                                                                            
-                        The output directory to save                                                                                                                                                                                 
-  --train_files TRAIN_FILES [TRAIN_FILES ...]                                                                                                                                                                                        
-                        Directory to train file (can be multiple files)                                                                                                                                                              
-  --text_column TEXT_COLUMN                                                                                                                                                                                                          
-                        The name of the column in the datasets containing the full texts .                                                                                                                                           
-  --target_column TARGET_COLUMN                                                                                                                                                                                                      
-                        The name of the column in the label containing the full texts .                                                                                                                                              
-  --val_files VAL_FILES [VAL_FILES ...]                                                                                                                                                                                              
-                        Directory to validation file (can be multiple files)                                                                                                                                                         
-  --test_files TEST_FILES [TEST_FILES ...]
-                        Directory to test file (can be multiple files)
-  --batch_size BATCH_SIZE
-                        Batch size for the dataloader
+usage: train.py [-h] [--output_dir OUTPUT_DIR] [--train_files TRAIN_FILES [TRAIN_FILES ...]] [--text_column TEXT_COLUMN] [--target_column TARGET_COLUMN] --val_files VAL_FILES [VAL_FILES ...] [--test_files TEST_FILES [TEST_FILES ...]]
+                [--batch_size BATCH_SIZE] [--max_train_samples MAX_TRAIN_SAMPLES] [--max_eval_samples MAX_EVAL_SAMPLES] [--seed SEED] [--model_name MODEL_NAME] [--num_train_epochs NUM_TRAIN_EPOCHS]                                    
+                [--max_target_length MAX_TARGET_LENGTH] [--num_beams NUM_BEAMS] [--mixed_precision MIXED_PRECISION] [--with_tracking] [--checkpointing_steps CHECKPOINTING_STEPS] [--resume_from_checkpoint RESUME_FROM_CHECKPOINT]      
+                [--do_eval_per_epoch] [--report_to REPORT_TO] [--learning_rate LEARNING_RATE] [--weight_decay WEIGHT_DECAY] [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS]                                                  
+                [--lr_scheduler_type {linear,cosine,cosine_with_restarts,polynomial,constant,constant_with_warmup}]                                                                                                                      
+                                                                                                                                                                                                                                         
+options:                                                                                                                                                                                                                                 
+  -h, --help            show this help message and exit                                                                                                                                                                                  
+  --output_dir OUTPUT_DIR                                                                                                                                                                                                                
+                        The output directory to save                                                                                                                                                                                     
+  --train_files TRAIN_FILES [TRAIN_FILES ...]                                                                                                                                                                                            
+                        Directory to train file (can be multiple files)                                                                                                                                                                  
+  --text_column TEXT_COLUMN                                                                                                                                                                                                              
+                        The name of the column in the datasets containing the full texts .                                                                                                                                               
+  --target_column TARGET_COLUMN                                                                                                                                                                                                          
+                        The name of the column in the label containing the full texts .                                                                                                                                                  
+  --val_files VAL_FILES [VAL_FILES ...]                                                                                                                                                                                                  
+                        Directory to validation file (can be multiple files)                                                                                                                                                             
+  --test_files TEST_FILES [TEST_FILES ...]                                                                                                                                                                                               
+                        Directory to test file (can be multiple files)                                                                                                                                                                   
+  --batch_size BATCH_SIZE                                                                                                                                                                                                                
+                        Batch size for the dataloader                                                                                                                                                                                    
   --max_train_samples MAX_TRAIN_SAMPLES
                         Number of training samples
   --max_eval_samples MAX_EVAL_SAMPLES
@@ -82,17 +82,15 @@ options:
                         number of beams
   --mixed_precision MIXED_PRECISION
                         Whether to use mixed precision. Choosebetween fp16 and bf16 (bfloat16). Bf16 requires PyTorch >= 1.10.and an Nvidia Ampere GPU.
-  --with_tracking WITH_TRACKING
-                        Whether to enable experiment trackers for logging.
+  --with_tracking       Whether to enable experiment trackers for logging.
   --checkpointing_steps CHECKPOINTING_STEPS
                         Whether the various states should be saved at the end of every n steps, or 'epoch' for each epoch.(can be 'epoch' or int)
   --resume_from_checkpoint RESUME_FROM_CHECKPOINT
                         If the training should continue from a checkpoint folder. (can be bool or string)
-  --do_eval_per_epoch DO_EVAL_PER_EPOCH
-                        Whether to run evaluate per epoch.
+  --do_eval_per_epoch   Whether to run evaluate per epoch.
   --report_to REPORT_TO
-                        The integration to report the results and logs to. Supported platforms are `"tensorboard"`, `"wandb"`,`"mlflow"`, `"comet_ml"` and `"clearml"`. Use `"all"` (default) to report to all integrations.Only applicable when      
-                        `--with_tracking` is passed.
+                        The integration to report the results and logs to. Supported platforms are `"tensorboard"`, `"wandb"`,mlflow, `"comet_ml"` and `"clearml"`. Use `"all"` (default) to report to all integrations.Only applicable    
+                        when `--with_tracking` is passed.
   --learning_rate LEARNING_RATE
                         Initial learning rate (after the potential warmup period) to use.
   --weight_decay WEIGHT_DECAY
@@ -113,10 +111,10 @@ fsdp_config: {}
 machine_rank: 0
 main_process_ip: null
 main_process_port: null
-main_training_function: trainer.train
+main_training_function: trainer.train     # Main training function containing accelerate instance
 mixed_precision: 'fp16'
 num_machines: 1
-num_processes: 2 # The number of GPUs on the system
+num_processes: 2    # The number of GPUs on the system
 use_cpu: false
 ```
 
@@ -124,7 +122,12 @@ use_cpu: false
 ```commandline
 compute_environment: LOCAL_MACHINE
 deepspeed_config: {}
-distributed_type: FSDP
+distributed_type: FSDP    # Distributed type:  NO — Not a distributed environment, just a single process.
+                                             # MULTI_CPU — Distributed on multiple CPU nodes.
+                                             # MULTI_GPU — Distributed on multiple GPUs.
+                                             # DEEPSPEED — Using DeepSpeed.
+                                             # TPU — Distributed on TPUs.
+                                             # FSDP - Fully sharded data parallel
 downcast_bf16: 'no'
 fsdp_config:
   fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
@@ -132,14 +135,14 @@ fsdp_config:
   fsdp_offload_params: false
   fsdp_sharding_strategy: 1
   fsdp_state_dict_type: FULL_STATE_DICT
-  fsdp_transformer_layer_cls_to_wrap: BartEncoderLayer,BartDecoderLayer 
+  fsdp_transformer_layer_cls_to_wrap: BartEncoderLayer,BartDecoderLayer     # Name of transformer blocks of the model to warp
 machine_rank: 0
 main_process_ip: null
 main_process_port: null
-main_training_function: trainer.train
+main_training_function: trainer.train   # Main training function containing accelerate instance
 mixed_precision: 'fp16'
 num_machines: 1
-num_processes: 2 # The number of GPUs on the system
+num_processes: 2    # The number of GPUs on the system
 use_cpu: false
 ```
 ```shell
