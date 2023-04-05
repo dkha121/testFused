@@ -29,7 +29,6 @@ from evaluation import Evaluation
 from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import set_seed  # reproducability across devices
-from accelerate.utils import operations
 from accelerate.utils import DistributedType
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP, StateDictType, FullStateDictConfig
 
@@ -60,7 +59,6 @@ class Trainer:
                  max_target_length: Optional[int] = 40,
                  ignore_pad_token_for_loss: bool = True,
                  num_beams: Optional[int] = 4,
-                 pad_to_max_length: bool = True,
                  config_name: Optional[str] = None,
                  tokenizer_name: Optional[str] = None,
                  use_slow_tokenizer: bool = False,
@@ -91,7 +89,6 @@ class Trainer:
         self.max_target_length = max_target_length
         self.ignore_pad_token_for_loss = ignore_pad_token_for_loss
         self.num_beams = num_beams
-        self.pad_to_max_length = pad_to_max_length
         self.config_name = config_name
         self.tokenizer_name = tokenizer_name
         self.use_slow_tokenizer = use_slow_tokenizer
@@ -141,7 +138,7 @@ class Trainer:
 
         if accelerator.is_local_main_process:
             datasets.utils.logging.set_verbosity_warning()
-            transformers.utils.logging.set_verbosity_info()
+            transformers.utils.logging.set_verbosity_warning()
         else:
             datasets.utils.logging.set_verbosity_error()
             transformers.utils.logging.set_verbosity_error()
@@ -235,7 +232,6 @@ class Trainer:
                 "model_name_or_path": self.model_name_or_path,
                 "max_target_length": self.max_target_length,
                 "num_beams": self.num_beams,
-                "pad_to_max_length": self.pad_to_max_length,
                 "per_device_batch_size": self.per_device_batch_size,
                 "learning_rate": self.learning_rate,
                 "weight_decay": self.weight_decay,
@@ -264,7 +260,6 @@ class Trainer:
         # Metric
         metric = evaluate.load("rouge",num_process=accelerator.num_processes,process_id=accelerator.process_index)
         evaluator = Evaluation(eval_dataloaders = dataloaders['eval'],
-                               pad_to_max_length = self.pad_to_max_length,
                                ignore_pad_token_for_loss = self.ignore_pad_token_for_loss,
                                metric = metric,
                                with_tracking = self.with_tracking,
@@ -282,7 +277,7 @@ class Trainer:
         logger.info(f"  Total optimization steps = {self.max_train_steps}")
 
         # Only show the progress bar once on each machine.
-        progress_bar = tqdm(range(self.max_train_steps), disable=not accelerator.is_local_main_process)
+        progress_bar = tqdm(range(self.max_train_steps), disable=not accelerator.is_local_main_process, colour="green")
         starting_epoch = 0
 
         # Potentially load in the weights and states from a previous save
@@ -307,7 +302,6 @@ class Trainer:
                 resume_step = int(training_difference.replace("step_", "")) * self.gradient_accumulation_steps
                 starting_epoch = resume_step // len(dataloaders['train'])
                 resume_step -= starting_epoch * len(dataloaders['train'])
-
 
         # update the progress_bar if load from checkpoint
         progress_bar.update(starting_epoch * self.num_update_steps_per_epoch)

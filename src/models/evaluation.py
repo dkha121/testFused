@@ -3,11 +3,13 @@ import torch
 import evaluate
 import nltk
 import time
-nltk.download('punkt',quiet=True)
+from tqdm.auto import tqdm
 from functools import wraps
 from typing import Optional
 from torch.utils.data.dataloader import DataLoader
 from accelerate.utils import DistributedType
+
+nltk.download('punkt', quiet=True)
 
 
 def timeit(func):
@@ -45,12 +47,14 @@ class Evaluation:
         accelerator.wait_for_everyone()
         accelerator.print("\n**** Starting evaluation ****\n")
         model.eval()
+
         gen_kwargs = {
             "max_length": self.max_target_length,
             "num_beams": self.num_beams
         }
+
         total_loss_eval = 0
-        for step, batch in enumerate(self.eval_dataloaders):
+        for step, batch in enumerate(tqdm(self.eval_dataloaders, disable=not accelerator.is_local_main_process, colour="blue")):
             # Pass dummy batch to avoid caffe error
             if step == 0 and accelerator.distributed_type == DistributedType.FSDP:
                 model(**batch)
@@ -103,6 +107,7 @@ class Evaluation:
         if self.with_tracking:
             return result, total_loss_eval
         return result
+
 
     def postprocess_text(self, preds, labels):
         preds = [pred.strip() for pred in preds]
