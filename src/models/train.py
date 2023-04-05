@@ -40,14 +40,14 @@ def parse_args(args):
                         help="Whether to use mixed precision. Choose"
                         "between fp16 and bf16 (bfloat16). Bf16 requires PyTorch >= 1.10."
                         "and an Nvidia Ampere GPU.")
-    parser.add_argument('--with_tracking', type=bool, default=True,
+    parser.add_argument('--with_tracking', action='store_true',
                         help="Whether to enable experiment trackers for logging.")
     parser.add_argument('--checkpointing_steps', type=str, default=None,
                         help="Whether the various states should be saved at the end of every n steps,"
                              " or 'epoch' for each epoch.(can be 'epoch' or int)")
     parser.add_argument('--resume_from_checkpoint', type=str, default=None,
                         help="If the training should continue from a checkpoint folder. (can be bool or string)")
-    parser.add_argument('--do_eval_per_epoch', type=bool, default=False,
+    parser.add_argument('--do_eval_per_epoch', action='store_true',
                         help="Whether to run evaluate per epoch.")
     parser.add_argument('--report_to', type=str, default='wandb',help=(
             'The integration to report the results and logs to. Supported platforms are `"tensorboard"`,'
@@ -79,6 +79,7 @@ def parse_args(args):
 def main(args):
 
     args = parse_args(args)
+
     dataloader_args = {
         "model_name": args.model_name,
         "text_column": args.text_column,
