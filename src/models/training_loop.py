@@ -46,7 +46,7 @@ def timeit(func):
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         total_time = end_time - start_time
-        print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
+        print(f'Function train Took {total_time:.4f} seconds')
 
         return result
     return timeit_wrapper
@@ -372,6 +372,7 @@ class Trainer:
                         logger.info(f"*** EVAL LOSS AT EPOCH {epoch} ***")
                         logger.info(result["eval_loss"])
 
+                # Saving best eval loss
                 if self.output_dir is not None and self.with_tracking:
                     accelerator.wait_for_everyone()
                     unwrapped_model = accelerator.unwrap_model(model)
@@ -401,16 +402,25 @@ class Trainer:
                     logger.info(result["train_loss"])
 
             accelerator.wait_for_everyone()
-            print("START CPKT: "+str(accelerator.process_index))
             if self.checkpointing_steps == "epoch":
                 self.save_cpkt(accelerator,checkpointing_steps=self.checkpointing_steps,epoch=epoch)
-            print("ENDING EPOCH: "+str(accelerator.process_index))
+            print(f"ENDING EPOCH: {epoch} on process "+str(accelerator.process_index))
 
         if self.with_tracking:
             accelerator.end_training()
 
+        # If eval per epoch == False, only save when the training is done
         if self.output_dir is not None and not self.do_eval_per_epoch:
-            self.save(accelerator, model, tokenizer, result)
+            accelerator.wait_for_everyone()
+            unwrapped_model = accelerator.unwrap_model(model)
+            if accelerator.distributed_type == DistributedType.FSDP:
+                full_state_dict_config = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+                with FSDP.state_dict_type(unwrapped_model, StateDictType.FULL_STATE_DICT,
+                                          full_state_dict_config):
+                    state = accelerator.get_state_dict(unwrapped_model)
+            else:
+                state = accelerator.get_state_dict(model)
+            self.save(accelerator, unwrapped_model, tokenizer, result, state)
 
     def save(self, accelerator, unwrapped_model, tokenizer, result, state):
         unwrapped_model.save_pretrained(
