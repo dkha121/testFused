@@ -10,6 +10,19 @@ from torch.utils.data.dataloader import DataLoader
 from accelerate.utils import DistributedType
 
 
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
+
+        return result
+    return timeit_wrapper
+
+
 class Evaluation:
     def __init__(self,
                  metric,
@@ -103,16 +116,3 @@ class Evaluation:
         labels = ["\n".join(nltk.sent_tokenize(label)) for label in labels]
 
         return preds, labels
-
-
-def timeit(func):
-    @wraps(func)
-    def timeit_wrapper(*args, **kwargs):
-        start_time = time.perf_counter()
-        result = func(*args, **kwargs)
-        end_time = time.perf_counter()
-        total_time = end_time - start_time
-        print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
-
-        return result
-    return timeit_wrapper
