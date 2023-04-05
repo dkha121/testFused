@@ -350,7 +350,7 @@ class Trainer:
                 if completed_steps >= self.max_train_steps:
                     break
 
-            #Eval per epoch
+            # Eval per epoch
             if self.do_eval_per_epoch:
                 if self.with_tracking:
                     result, total_loss_eval = evaluator.eval(accelerator = accelerator,

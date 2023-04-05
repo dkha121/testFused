@@ -27,7 +27,6 @@ class Evaluation:
     def __init__(self,
                  metric,
                  eval_dataloaders: DataLoader,
-                 pad_to_max_length: bool = True,
                  ignore_pad_token_for_loss: bool = True,
                  with_tracking: bool = False,
                  num_beams: Optional[int] = 4,
@@ -35,7 +34,6 @@ class Evaluation:
                  ):
 
         self.eval_dataloaders = eval_dataloaders
-        self.pad_to_max_length = pad_to_max_length
         self.ignore_pad_token_for_loss = ignore_pad_token_for_loss
         self.metric = metric
         self.with_tracking = with_tracking
@@ -105,7 +103,6 @@ class Evaluation:
         if self.with_tracking:
             return result, total_loss_eval
         return result
-
 
     def postprocess_text(self, preds, labels):
         preds = [pred.strip() for pred in preds]
