@@ -102,9 +102,8 @@ class Evaluation:
                                     labels=batch["labels"])
                     loss = outputs.loss
                     total_loss_eval += loss.detach().float()
-        result = self.metric.compute(use_stemmer=True)
-        if accelerator.is_main_process:
-            result = {k: round(v * 100, 4) for k, v in result.items()}
+        result = self.metric.compute()
+
         print(f"** Evaluation of process {accelerator.process_index} completed **")
         if self.with_tracking:
             return result, total_loss_eval
